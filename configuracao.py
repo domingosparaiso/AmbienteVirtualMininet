@@ -1,5 +1,5 @@
 CONFIG_FILE = 'config.json'
-from geral import msg
+import msg
 import json
 
 ################################################################################
@@ -33,17 +33,17 @@ class configuracao():
 #
 def configuracaoCarregar():
     config = configuracao()
-    msg(1, f"Lendo arquivo '{CONFIG_FILE}'...")
+    msg.info(f"Lendo arquivo '{CONFIG_FILE}'...")
     try:
         f = open(CONFIG_FILE, 'r')
         json_context = json.loads(f.read())
         f.close()
     except:
-        msg(2, f"Erro ao carregar o arquivo de configuração '{CONFIG_FILE}' !!!")
+        msg.erro(f"Erro ao carregar o arquivo de configuração '{CONFIG_FILE}' !!!")
         return None
     if config.load(json_context) == None:
-        msg(2, f"Erro no conteúdo do arquivo de configuração '{CONFIG_FILE}' !!!")
+        msg.erro(f"Erro no conteúdo do arquivo de configuração '{CONFIG_FILE}' !!!")
         return None
     else:
-        msg(1, "Configuração carregada!")
+        msg.info("Configuração carregada!")
     return config

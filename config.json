@@ -16,10 +16,10 @@
 		]
 	},
 	"paths": [
-		{ "name": "rota1", "path": ["h11","h61"]} ,
-		{ "name": "rota2", "path": ["h12","h62"]} ,
-		{ "name": "rota3", "path": ["h13","h63"]} ,
-		{ "name": "rota4", "path": ["h14","h64"]}
+		{ "name": "rota1", "path": ["h11","s1","s3","s5","s6","h61"]} ,
+		{ "name": "rota2", "path": ["h12","s1","s2","s4","s6","h62"]} ,
+		{ "name": "rota3", "path": ["h13","s1","s3","s4","s6","h63"]} ,
+		{ "name": "rota4", "path": ["h14","s1","s2","s4","s3","s5","s6","h64"]}
 	],
 	"telemetry": [
 		{ "type": "latency", "sources": [ "paths" ] }

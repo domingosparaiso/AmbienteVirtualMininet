@@ -1,4 +1,4 @@
-from geral import msg
+import msg
 from multiprocessing import Queue
 from multiprocessing import Process
 from time import sleep
@@ -22,7 +22,7 @@ def telemetriaInicializaServidor():
     processo = Process(target=procServidorTelemetria, args=(fila, retorno))
     processo.start()
     telemetriaServidor = { 'processo': processo, 'fila': fila, 'retorno': retorno }
-    msg(1, "Servidor de telemetria incializado!")
+    msg.info("Servidor de telemetria incializado!")
     return telemetriaServidor
 
 ################################################################################
@@ -57,7 +57,7 @@ def salvarTelemetria(item):
     if tipo == 'latency':
         nome = item['nome']
         valor = item['valor']
-        msg(4, "Recebida telemetria: %s valor=%s" % (nome, valor))
+        msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
         chave = tipo + '_' + nome
         baseDados = DataLake.get(chave, [])
         agora = datetime.now()
@@ -78,7 +78,7 @@ def salvarTelemetria(item):
 def telemetriaFinalizaServidor(telemetriaServidor):
     telemetriaServidor['fila'].put(None)
     telemetriaServidor['processo'].join()
-    msg(1, "Servidor de telemetria finalizado!")
+    msg.info("Servidor de telemetria finalizado!")
     return None
 
 ################################################################################
@@ -109,7 +109,7 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
                             'caminho': rota['path'],
                             'processo': processo
                         } )
-    msg(1, "Agentes de telemetria inicializados!")
+    msg.info("Agentes de telemetria inicializados!")
     return telemetriaAgentes
 
 ################################################################################
@@ -124,7 +124,7 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
 def procAgenteTelemetria(fila, tipo, rota, net):
     nome = rota['name']
     caminho = rota['path']
-    #msg(4, "Agente telemetria, tipo=Latência rota [%s]= [%s]" % (nome, caminho))
+    #msg.debug("Agente telemetria, tipo=Latência rota [%s]= [%s]" % (nome, caminho))
     if tipo == 'latency':
         origem = caminho[0]
         destino = caminho[-1]
@@ -138,7 +138,7 @@ def procAgenteTelemetria(fila, tipo, rota, net):
                     valor = float(line.strip().split(' ')[6].split('=')[1])
                 except:
                     valor = 0
-                #msg(4, "Enviando telemetria de '%s' para a fila" % (nome))
+                #msg.debug("Enviando telemetria de '%s' para a fila" % (nome))
                 fila.put( { 'tipo': 'latency', 'nome': nome, 'valor': valor } )
     return None
 
@@ -154,7 +154,7 @@ def telemetriaFinalizaAgentes(telemetriaAgentes):
     for agente in telemetriaAgentes:
         nome = agente['nome']
         tipo = agente['tipo']
-        msg(4, "Finalizando %s, tipo=%s" % (nome, tipo))
+        msg.debug("Finalizando %s, tipo=%s" % (nome, tipo))
         processo = agente['processo']
         processo.terminate()
     sleep(2)
@@ -163,7 +163,7 @@ def telemetriaFinalizaAgentes(telemetriaAgentes):
         if processo.is_alive():
             processo.kill()
             processo.join()
-    msg(1, "Agentes de telemetria finalizados!")
+    msg.info("Agentes de telemetria finalizados!")
     return None
 
 ################################################################################
@@ -182,5 +182,5 @@ def telemetriaHistorico(telemetriaServidor):
     fila.put({'tipo': 'report'})
     # Aguarda na fila o retorno do dicionário contendo os dados coletados
     resultado = retorno.get()
-    msg(1, "Dados históricos carregados!")
+    msg.info("Dados históricos carregados!")
     return resultado

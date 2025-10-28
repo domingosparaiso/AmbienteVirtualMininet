@@ -1,4 +1,4 @@
-from geral import msg
+import msg
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -40,7 +40,7 @@ def topologiaGerarGrafo(topologia, config_topologia):
     plt.savefig("report/%s.png" % config_topologia['name'])
     plt.clf()
 
-    msg(1, "Grafo da topologia gerado na pasta 'report'.")
+    msg.info("Grafo da topologia gerado na pasta 'report'.")
     return None
 
 ################################################################################
@@ -60,7 +60,7 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
         for item in lista:
             f.write('%s\t%f\n' % (item['datahora'], item['valor']))
         f.close()
-    msg(1, "Resultados salvos em arquivos na pasta 'report'.")
+    msg.info("Resultados salvos em arquivos na pasta 'report'.")
     return None
 
 ################################################################################
@@ -74,6 +74,6 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
 #   None
 #
 def graficosGerar(resultado, config_telemetria, config_teste):
-    msg(1, "Imagens dos gráficos salvos na pasta 'report'.")
+    msg.info("Imagens dos gráficos salvos na pasta 'report'.")
     return None
 

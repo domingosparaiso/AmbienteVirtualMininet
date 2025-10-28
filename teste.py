@@ -1,4 +1,4 @@
-from geral import msg
+import msg
 from time import sleep
 
 ################################################################################
@@ -11,7 +11,7 @@ from time import sleep
 #   None
 #
 def testeExecuta(config_testes, net):
-    msg(1, "Iniciando todos os processos de teste...")
-    sleep(5)
-    msg(1, "Todos os testes foram executados!")
+    msg.info("Iniciando todos os processos de teste...")
+    sleep(15)
+    msg.info("Todos os testes foram executados!")
     return
