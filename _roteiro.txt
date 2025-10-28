@@ -1,0 +1,14 @@
+OK configuracao    configuracaoCarregar           configuração básica, vai receber outros recursos durante o processo
+OK rede            mininetInicializa              carregar em processo separado
+OK rede            mininetFinaliza                limpar a configuração e finalizar o processo
+OK rede            controladorInicializa          carregar em processo separado
+OK rede            controladorFinaliza            limpar a configuração e finalizar o processo
+OK teste           testeExecuta                   inicialmente só um delay, depois implementar os fluxos de iperf
+OK telemetria      telemetriaInicializaServidor   carregar o servidor em processo separado, comunicação usando queue
+OK telemetria      telemetriaFinalizaServidor     finalizar o processo
+OK telemetria      telemetriaInicializaAgentes    carregar cada agente em um processo separado, comunicação usando queue
+OK telemetria      telemetriaFinalizaAgentes      finalizar todos os processos
+OK telemetria      telemetriaHistorico            avaliar quais dados devem ser retornados
+OK graficos        arquivosSalvar                 usar configuração para dar nome na pasta de saída e arquivos
+ 6 graficos        graficosGerar                  usar configuração para dar agrupar dados no mesmo gráfico
+OK graficos        topologiaGerarGrafo            usar rotina já existente para criar o grafo

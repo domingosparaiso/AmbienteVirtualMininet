@@ -1,0 +1,85 @@
+{
+	"method": "ospf",
+	"topology": {
+		"label": "Rede de Teste",
+		"name": "generica",
+		"switches": [
+			"s1","s2","s3","s4","s5","s6"
+		],
+		"hosts": [
+			"h11","h12","h13","h14","h61","h62","h63","h64"
+		],
+		"links": [
+			"s1-s2","s1-s3","s2-s4","s3-s4","s3-s5","s4-s6","s5-s6",
+			"s1-h11","s1-h12","s1-h13","s1-h14",
+			"s6-h61","s6-h62","s6-h63","s6-h64"
+		]
+	},
+	"paths": [
+		{ "name": "rota1", "path": ["h11","h61"]} ,
+		{ "name": "rota2", "path": ["h12","h62"]} ,
+		{ "name": "rota3", "path": ["h13","h63"]} ,
+		{ "name": "rota4", "path": ["h14","h64"]}
+	],
+	"telemetry": [
+		{ "type": "latency", "sources": [ "paths" ] }
+	],
+	"flowtest": [
+		{
+			"id": "proc1",
+			"label": "Processo Um",
+			"items": [
+				{ 
+					"type": "iperf",
+					"duration": 60,
+					"src": "h11",
+					"dst": "h61",
+					"params": "",
+					"optimizer": "default"
+				},
+				{
+					"type": "delay",
+					"duration": 60
+				},
+				{
+					"type": "iperf",
+					"duration": 60,
+					"src": "h11",
+					"dst": "h61",
+					"params": "",
+					"optimizer": "default"
+				}
+			]
+		},
+		{
+			"id": "proc2",
+			"label": "Processo Dois",
+			"items": [
+				{
+					"duration": 180,
+					"src": "h12",
+					"dst": "h62",
+					"params": "",
+					"optimizer": "default"
+				}
+			]
+		}
+	],
+	"plots": [
+		{
+			"type": "topology",
+			"label": "Topologia"
+		},
+		{
+			"label": "Latência",
+			"type": "telemetry",
+			"sources": {
+				"latency": [ "paths" ]
+				}
+		},
+		{
+			"type": "flowtest",
+			"sources": [ "proc1", "proc2" ]
+		}
+	]
+}
