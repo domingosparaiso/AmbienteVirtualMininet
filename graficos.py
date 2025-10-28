@@ -28,7 +28,7 @@ def topologiaGerarGrafo(topologia, config_topologia):
     pos = nx.nx_agraph.graphviz_layout(Gtopo, prog='circo', args='')
 
     plt.figure(figsize=(50,30))
-    plt.title("Topologia: %s\n" % config_topologia['label'], fontsize=60)
+    plt.title("Topologia: %s\n" % config_topologia['descricao'], fontsize=60)
 
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=sw, node_size=10000, node_color='g', label='Switches')
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=hs, node_size=10000, node_color='b', label='Hosts')
@@ -37,10 +37,10 @@ def topologiaGerarGrafo(topologia, config_topologia):
     
     plt.axis('off')
     plt.legend(handletextpad=1.0, labelspacing=2.5, borderpad=1, fontsize=40, shadow=True)
-    plt.savefig("report/%s.png" % config_topologia['name'])
+    plt.savefig("relatorios/%s.png" % config_topologia['nome'])
     plt.clf()
 
-    msg.info("Grafo da topologia gerado na pasta 'report'.")
+    msg.info("Grafo da topologia gerado na pasta 'relatorios'.")
     return None
 
 ################################################################################
@@ -56,11 +56,11 @@ def topologiaGerarGrafo(topologia, config_topologia):
 def arquivosSalvar(resultado, config_telemetria, config_teste):
     # TODO: Enviar os dados salvos
     for chave, lista in resultado.items():
-        f = open(f'report/{chave}.txt', 'w')
+        f = open(f'relatorios/{chave}.txt', 'w')
         for item in lista:
             f.write('%s\t%f\n' % (item['datahora'], item['valor']))
         f.close()
-    msg.info("Resultados salvos em arquivos na pasta 'report'.")
+    msg.info("Resultados salvos em arquivos na pasta 'relatorios'.")
     return None
 
 ################################################################################
@@ -74,6 +74,6 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
 #   None
 #
 def graficosGerar(resultado, config_telemetria, config_teste):
-    msg.info("Imagens dos gráficos salvos na pasta 'report'.")
+    msg.info("Imagens dos gráficos salvos na pasta 'relatorios'.")
     return None
 

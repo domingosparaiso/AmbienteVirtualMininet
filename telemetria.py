@@ -38,7 +38,7 @@ def procServidorTelemetria(fila, retorno):
         item = fila.get()
         if item is None:
             break
-        if item['tipo'] == 'report':
+        if item['tipo'] == 'dados':
             retorno.put(DataLake)
         else:
             salvarTelemetria(item)
@@ -54,7 +54,7 @@ def procServidorTelemetria(fila, retorno):
 #
 def salvarTelemetria(item):
     tipo = item['tipo']
-    if tipo == 'latency':
+    if tipo == 'latencia':
         nome = item['nome']
         valor = item['valor']
         msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
@@ -96,17 +96,17 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
     fila = telemetriaServidor['fila']
     config_telemetria = config.telemetria
     for item in config_telemetria:
-        tipo = item['type']
-        if tipo == 'latency':
-            for origem in item['sources']:
-                if origem == 'paths':
+        tipo = item['tipo']
+        if tipo == 'latencia':
+            for origem in item['origens']:
+                if origem == 'caminhos':
                     for rota in config.caminhos:
                         processo = Process(target=procAgenteTelemetria, args=(fila, tipo, rota, net))
                         processo.start()
                         telemetriaAgentes.append( { 
                             'tipo': tipo,
-                            'nome': rota['name'],
-                            'caminho': rota['path'],
+                            'nome': rota['nome'],
+                            'caminho': rota['caminho'],
                             'processo': processo
                         } )
     msg.info("Agentes de telemetria inicializados!")
@@ -122,10 +122,10 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
 #   net - objeto para acessar o Mininet e enviar os comandos aos hosts
 #
 def procAgenteTelemetria(fila, tipo, rota, net):
-    nome = rota['name']
-    caminho = rota['path']
+    nome = rota['nome']
+    caminho = rota['caminho']
     #msg.debug("Agente telemetria, tipo=Latência rota [%s]= [%s]" % (nome, caminho))
-    if tipo == 'latency':
+    if tipo == 'latencia':
         origem = caminho[0]
         destino = caminho[-1]
         host_origem = net.get(origem)
@@ -139,7 +139,7 @@ def procAgenteTelemetria(fila, tipo, rota, net):
                 except:
                     valor = 0
                 #msg.debug("Enviando telemetria de '%s' para a fila" % (nome))
-                fila.put( { 'tipo': 'latency', 'nome': nome, 'valor': valor } )
+                fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': valor } )
     return None
 
 ################################################################################
@@ -179,7 +179,7 @@ def telemetriaHistorico(telemetriaServidor):
     fila = telemetriaServidor['fila']
     retorno = telemetriaServidor['retorno']
     # Envia mensagem solicitando os dados coletados
-    fila.put({'tipo': 'report'})
+    fila.put({'tipo': 'dados'})
     # Aguarda na fila o retorno do dicionário contendo os dados coletados
     resultado = retorno.get()
     msg.info("Dados históricos carregados!")

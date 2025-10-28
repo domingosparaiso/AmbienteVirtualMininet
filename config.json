@@ -1,8 +1,8 @@
 {
-	"method": "ospf",
-	"topology": {
-		"label": "Rede de Teste",
-		"name": "generica",
+	"metodo": "ospf",
+	"topologia": {
+		"descricao": "Rede de Teste",
+		"nome": "generica",
 		"switches": [
 			"s1","s2","s3","s4","s5","s6"
 		],
@@ -15,71 +15,72 @@
 			"s6-h61","s6-h62","s6-h63","s6-h64"
 		]
 	},
-	"paths": [
-		{ "name": "rota1", "path": ["h11","s1","s3","s5","s6","h61"]} ,
-		{ "name": "rota2", "path": ["h12","s1","s2","s4","s6","h62"]} ,
-		{ "name": "rota3", "path": ["h13","s1","s3","s4","s6","h63"]} ,
-		{ "name": "rota4", "path": ["h14","s1","s2","s4","s3","s5","s6","h64"]}
+	"caminhos": [
+		{ "nome": "rota1", "caminho": ["h11","s1","s3","s5","s6","h61"]} ,
+		{ "nome": "rota2", "caminho": ["h12","s1","s2","s4","s6","h62"]} ,
+		{ "nome": "rota3", "caminho": ["h13","s1","s3","s4","s6","h63"]} ,
+		{ "nome": "rota4", "caminho": ["h14","s1","s2","s4","s3","s5","s6","h64"]}
 	],
-	"telemetry": [
-		{ "type": "latency", "sources": [ "paths" ] }
+	"telemetria": [
+		{ "tipo": "latencia", "origens": [ "caminhos" ] }
 	],
-	"flowtest": [
+	"testefluxo": [
 		{
 			"id": "proc1",
-			"label": "Processo Um",
-			"items": [
+			"descricao": "Processo Um",
+			"itens": [
 				{ 
-					"type": "iperf",
-					"duration": 60,
-					"src": "h11",
-					"dst": "h61",
-					"params": "",
-					"optimizer": "default"
+					"tipo": "iperf",
+					"duracao": 60,
+					"origem": "h11",
+					"destino": "h61",
+					"parametros": "",
+					"otimizador": "default"
 				},
 				{
-					"type": "delay",
-					"duration": 60
+					"tipo": "delay",
+					"duracao": 60
 				},
 				{
-					"type": "iperf",
-					"duration": 60,
-					"src": "h11",
-					"dst": "h61",
-					"params": "",
-					"optimizer": "default"
+					"tipo": "iperf",
+					"duracao": 60,
+					"origem": "h11",
+					"destino": "h61",
+					"parametros": "",
+					"otimizador": "default"
 				}
 			]
 		},
 		{
 			"id": "proc2",
-			"label": "Processo Dois",
-			"items": [
+			"descricao": "Processo Dois",
+			"itens": [
 				{
-					"duration": 180,
-					"src": "h12",
-					"dst": "h62",
-					"params": "",
-					"optimizer": "default"
+					"duracao": 180,
+					"origem": "h12",
+					"destino": "h62",
+					"parametros": "",
+					"otimizador": "default"
 				}
 			]
 		}
 	],
-	"plots": [
+	"plotagem": [
 		{
-			"type": "topology",
-			"label": "Topologia"
+			"tipo": "topologia",
+			"descricao": "Topologia"
 		},
 		{
-			"label": "Latência",
-			"type": "telemetry",
-			"sources": {
-				"latency": [ "paths" ]
+			"descricao": "Latência",
+			"tipo": "telemetria",
+			"origens": {
+				"latencia": [ "caminhos" ]
 				}
 		},
 		{
-			"type": "flowtest",
-			"sources": [ "proc1", "proc2" ]
+			"descricao": "Fluxo",
+			"tipo": "testefluxo",
+			"origens": [ "proc1", "proc2" ]
 		}
 	]
 }
