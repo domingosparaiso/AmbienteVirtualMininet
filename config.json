@@ -10,9 +10,21 @@
 			"h11","h12","h13","h14","h61","h62","h63","h64"
 		],
 		"links": [
-			"s1-s2","s1-s3","s2-s4","s3-s4","s3-s5","s4-s6","s5-s6",
-			"s1-h11","s1-h12","s1-h13","s1-h14",
-			"s6-h61","s6-h62","s6-h63","s6-h64"
+			{ "pontos": ["s1", "s2"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "s3"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s2", "s4"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s3", "s4"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s3", "s5"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s4", "s6"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s5", "s6"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "h11"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "h12"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "h13"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "h14"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h61"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h62"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h63"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h64"], "banda": "", "atraso": "", "perda":"" }
 		]
 	},
 	"caminhos": [

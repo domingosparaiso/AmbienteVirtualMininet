@@ -27,10 +27,15 @@ class topologiaGenerica(Topo):
             self.addSwitch(switch, dpid=hex(cont).lstrip("0x"))
             cont = cont + 1
         for link in topologia['links']:
-            if '-' in link:
-                a,b = link.split('-')
-                self.addLink(a, b)
-                self.links_to_graph.append((a, b))
+            pontos = link['pontos']
+            a = pontos[0]
+            b = pontos[1]
+            banda = link['banda']
+            atraso = link['atraso']
+            perda = link['perda']
+            # TODO: Inserir no link as restrições de banda, atraso e perda
+            self.addLink(a, b)
+            self.links_to_graph.append((a, b))
 
     # Funcoes que retornam switches, links e hosts para geracao do grafo
     def get_switches_to_graph(self):
