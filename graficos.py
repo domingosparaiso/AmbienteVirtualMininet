@@ -18,7 +18,7 @@ def topologiaGerarGrafo(topologia, config_topologia, config_plotagem):
     descricao = None
     for item in config_plotagem:
         if item['tipo'] == 'topologia':
-            descricao = tipo['descricao']
+            descricao = item['descricao']
     if descricao == None:
         msg.aviso('Grafo da topologia não foi configurado.')
         return None
