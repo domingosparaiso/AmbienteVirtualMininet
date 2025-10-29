@@ -33,10 +33,11 @@
 		]
 	},
 	"caminhos": [
-		{ "nome": "rota1", "caminho": ["h11","s1","s3","s5","s6","h61"]} ,
-		{ "nome": "rota2", "caminho": ["h12","s1","s2","s4","s6","h62"]} ,
-		{ "nome": "rota3", "caminho": ["h13","s1","s3","s4","s6","h63"]} ,
-		{ "nome": "rota4", "caminho": ["h14","s1","s2","s4","s3","s5","s6","h64"]}
+		{ "nome": "rota1", "caminho": ["h11","*","h61"]} ,
+		{ "nome": "rota2", "caminho": ["h12","*","h62"]} ,
+		{ "nome": "rota3", "caminho": ["h13","*","h63"]} ,
+		{ "nome": "rota4", "caminho": ["h14","*","h64"]} ,
+		{ "nome": "rota5", "caminho": ["h15","*","h65"]}
 	],
 	"telemetria": [
 		{ "tipo": "latencia", "origens": [ "caminhos" ] }
