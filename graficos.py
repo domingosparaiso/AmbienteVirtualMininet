@@ -8,11 +8,20 @@ import matplotlib.pyplot as plt
 #   configuração em <topology.name>
 #
 # Parâmetros:
-#   topologia - configuração da topologia a ser usada
+#   topologia - objeto contendo a topologia em uso
+#   config_topologia - configuração da topologia a ser usada
+#   config_plotagem - informações sobre a plotagem do grafo
 # Retorno:
 #   None
 #
-def topologiaGerarGrafo(topologia, config_topologia):
+def topologiaGerarGrafo(topologia, config_topologia, config_plotagem):
+    descricao = None
+    for item in config_plotagem:
+        if item['tipo'] == 'topologia':
+            descricao = tipo['descricao']
+    if descricao == None:
+        msg.aviso('Grafo da topologia não foi configurado.')
+        return None
     # Cria o grafo da topologia
     Gtopo = nx.DiGraph() # Grafo da topologia
 
@@ -28,7 +37,7 @@ def topologiaGerarGrafo(topologia, config_topologia):
     pos = nx.nx_agraph.graphviz_layout(Gtopo, prog='circo', args='')
 
     plt.figure(figsize=(50,30))
-    plt.title("Topologia: %s\n" % config_topologia['descricao'], fontsize=60)
+    plt.title("%s %s\n" % (descricao, config_topologia['descricao']), fontsize=60)
 
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=sw, node_size=10000, node_color='g', label='Switches')
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=hs, node_size=10000, node_color='b', label='Hosts')
@@ -37,7 +46,7 @@ def topologiaGerarGrafo(topologia, config_topologia):
     
     plt.axis('off')
     plt.legend(handletextpad=1.0, labelspacing=2.5, borderpad=1, fontsize=40, shadow=True)
-    plt.savefig("relatorios/%s.png" % config_topologia['nome'])
+    plt.savefig("relatorios/topologia_%s.png" % config_topologia['nome'])
     plt.clf()
 
     msg.info("Grafo da topologia gerado na pasta 'relatorios'.")

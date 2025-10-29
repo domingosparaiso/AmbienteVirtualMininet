@@ -21,7 +21,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Gerando grafo da topologia...")
-    topologiaGerarGrafo(topologia, config.topologia)
+    topologiaGerarGrafo(topologia, config.topologia, config.plotagem)
     msg.main("Inicializando o mininet com a topologia...")
     net = mininetInicializa(topologia)
     if net == None:
