@@ -16,7 +16,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Criando a topologia de rede...")
-    topologia = topologiaGenerica(config.topologia)
+    topologia = topologiaGenerica(config)
     if topologia == None:
         msg.main("Finalizando por falha.")
         exit(1)
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Inicializando o controlador...")
-    controlador = controladorInicializa(net, config.metodo, topologia)
+    controlador = controladorInicializa(net, config, topologia)
     if controlador == None:
         msg.main("Finalizando por falha.")
         exit(1)

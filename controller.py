@@ -62,7 +62,6 @@ class Trabalho2Controller(app_manager.RyuApp):
             f.write(self.routing_method)
             f.close()           
 
-
         #self.mac_to_port = {}
         self.dpid_to_datapath = {} # Datapaths dos dpid (switches)
         #self.ip_to_mac = {}  # Mac dos ips dos hosts
@@ -87,6 +86,16 @@ class Trabalho2Controller(app_manager.RyuApp):
         # Ex: (1, 2, 'port':3) - Link entre switch 1 e 2, para 1 chegar a 2 tem que sair pela porta 3. 
         self.link_port = nx.get_edge_attributes(self.Gtopo,'port')
 
+        # atualizando a tabela com as portas de saída
+        self.routing_table = {}
+        for dpid, lista in self.data_topo['rotas'].items():
+            tabela = {}
+            for destino, saida in lista.items():
+                porta = self.link_port.get( (dpid, saida), None)
+                if porta:
+                    tabela.update( { destino: porta } )
+            self.routing_table.update( { dpid: tabela } )
+
     # Função para instalar table-miss
     # Fonte: ryu/app/simple_switch_13.py
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -106,6 +115,30 @@ class Trabalho2Controller(app_manager.RyuApp):
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
+        self.install_static_routes(datapath)
+
+    def install_static_routes(self, datapath):
+        """Install static routing rules for a switch"""
+        dpid = datapath.id
+        parser = datapath.ofproto_parser
+        
+        if dpid not in self.routing_table:
+            return
+        
+        for dst_ip, out_port in self.routing_table[dpid].items():
+            # Install flow for IP packets
+            match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP,
+                                   ipv4_dst=dst_ip)
+            actions = [parser.OFPActionOutput(out_port)]
+            self.add_flow(datapath, 10, match, actions)
+            self.logger.info("Installed route on s%s: %s -> port %s", 
+                           dpid, dst_ip, out_port)
+            
+            # Install flow for ARP packets to same destination
+            match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_ARP,
+                                   arp_tpa=dst_ip)
+            actions = [parser.OFPActionOutput(out_port)]
+            self.add_flow(datapath, 10, match, actions)
 
     # Funcao para capturar os switches e guardar os datapaths       
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)

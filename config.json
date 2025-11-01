@@ -11,7 +11,7 @@
 			"h60","h61","h62","h63","h64","h65"
 		],
 		"links": [
-			{ "pontos": ["s1", "s2"], "banda": "", "atraso": "", "perda":"" },
+			{ "pontos": ["s1", "s2"], "banda": "", "atraso": "100", "perda":"" },
 			{ "pontos": ["s1", "s4"], "banda": "", "atraso": "", "perda":"" },
 			{ "pontos": ["s2", "s3"], "banda": "", "atraso": "", "perda":"" },
 			{ "pontos": ["s2", "s5"], "banda": "", "atraso": "", "perda":"" },
@@ -30,17 +30,17 @@
 			{ "pontos": ["s6", "h63"], "banda": "", "atraso": "", "perda":"" },
 			{ "pontos": ["s6", "h64"], "banda": "", "atraso": "", "perda":"" },
 			{ "pontos": ["s6", "h65"], "banda": "", "atraso": "", "perda":"" }
+		],
+		"rotas": [
+			{ "nome": "rota1", "caminho": ["h11","s1","*","s6","h61"]} ,
+			{ "nome": "rota2", "caminho": ["h12","s1","*","s6","h62"]} ,
+			{ "nome": "rota3", "caminho": ["h13","s1","*","s6","h63"]} ,
+			{ "nome": "rota4", "caminho": ["h14","s1","*","s6","h64"]} ,
+			{ "nome": "rota5", "caminho": ["h15","s1","*","s6","h65"]}
 		]
 	},
-	"caminhos": [
-		{ "nome": "rota1", "caminho": ["h11","*","h61"]} ,
-		{ "nome": "rota2", "caminho": ["h12","*","h62"]} ,
-		{ "nome": "rota3", "caminho": ["h13","*","h63"]} ,
-		{ "nome": "rota4", "caminho": ["h14","*","h64"]} ,
-		{ "nome": "rota5", "caminho": ["h15","*","h65"]}
-	],
 	"telemetria": [
-		{ "tipo": "latencia", "origens": [ "caminhos" ] }
+		{ "tipo": "latencia", "origens": [ "rotas" ] }
 	],
 	"testefluxo": [
 		{
@@ -92,7 +92,7 @@
 			"descricao": "Latência",
 			"tipo": "telemetria",
 			"origens": {
-				"latencia": [ "caminhos" ]
+				"latencia": [ "rotas" ]
 				}
 		},
 		{

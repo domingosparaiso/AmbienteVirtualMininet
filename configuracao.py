@@ -15,7 +15,6 @@ class configuracao():
     def load(self, json_context):
         try:
             self.topologia = json_context['topologia']
-            self.caminhos = json_context['caminhos']
             self.telemetria = json_context['telemetria']
             self.teste = json_context['testefluxo']
             self.plotagem = json_context['plotagem']

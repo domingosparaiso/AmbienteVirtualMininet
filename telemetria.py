@@ -36,11 +36,15 @@ def telemetriaInicializaServidor():
 def procServidorTelemetria(fila, retorno):
     while True:
         item = fila.get()
+        # Encerra o processo quando receber o valor None na fila
         if item is None:
             break
+        # Envia os dados coletados quando receber um objeto do tipo 'dados'
         if item['tipo'] == 'dados':
+            # Os dados coletados são enviados para a Queue de retorno
             retorno.put(DataLake)
         else:
+            # Salva a nova informação de telemetria
             salvarTelemetria(item)
     return None
 
@@ -54,16 +58,21 @@ def procServidorTelemetria(fila, retorno):
 #
 def salvarTelemetria(item):
     tipo = item['tipo']
+    # Verifica e armazena de acordo com o tipo de dado recebido
     if tipo == 'latencia':
         nome = item['nome']
         valor = item['valor']
-        msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
+        #msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
+        # cada telemetria possui uma chave diferente no formato "latencia_{nome}"
         chave = tipo + '_' + nome
+        # Se a base já existe, obtem o histórico, se é nova, cria um array vazio
         baseDados = DataLake.get(chave, [])
         agora = datetime.now()
+        # Coleta contém data/hora atuais
         datahora = agora.strftime("%Y-%m-%d %H:%M:%S")        
         # TODO: Limitar no máximo de itens suportados
         baseDados.append( { 'datahora': datahora, 'valor': valor } )
+        # Atualiza a base de dados da latência recebida
         DataLake.update({chave: baseDados})
     return None
 
@@ -76,7 +85,9 @@ def salvarTelemetria(item):
 #   None
 #
 def telemetriaFinalizaServidor(telemetriaServidor):
+    # Sinaliza ao servidor que vamos finalizar colocando None na fila
     telemetriaServidor['fila'].put(None)
+    # Aguarda o processo do servidor finalizar
     telemetriaServidor['processo'].join()
     msg.info("Servidor de telemetria finalizado!")
     return None
@@ -92,21 +103,29 @@ def telemetriaFinalizaServidor(telemetriaServidor):
 #   Dicionário contendo os objetos de acesso aos agentes
 #
 def telemetriaInicializaAgentes(config, telemetriaServidor, net):
+    # Lista de agentes ativos
     telemetriaAgentes = []
+    # Queue onde o servidor de telemetria aguarda os valores
     fila = telemetriaServidor['fila']
+    config_topologia = config.topologia
     config_telemetria = config.telemetria
+    # Passar por todas as telemetrias configuradas
     for item in config_telemetria:
         tipo = item['tipo']
+        # Tratar de acordo com o tipo
         if tipo == 'latencia':
             for origem in item['origens']:
-                if origem == 'caminhos':
-                    for rota in config.caminhos:
-                        processo = Process(target=procAgenteTelemetria, args=(fila, tipo, rota, net))
+                # Quando origem == 'rotas', pegar da lista na configuração
+                if origem == 'rotas':
+                    for rota in config_topologia['rotas']:
+                        # Inicia um processo de agente
+                        processo = Process(target=procAgenteTelemetria, args=(fila, tipo, rota['nome'], rota['caminho'], net))
                         processo.start()
+                        # Armazena os dados do processo para controle futuro
                         telemetriaAgentes.append( { 
                             'tipo': tipo,
                             'nome': rota['nome'],
-                            'caminho': rota['caminho'],
+                            'parametros': rota['caminho'],
                             'processo': processo
                         } )
     msg.info("Agentes de telemetria inicializados!")
@@ -118,16 +137,14 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
 # Parâmetros:
 #   fila - objeto Queue para onde os dados devem ser enviados (servidor)
 #   tipo - tipo de telemetria (ex: latência)
-#   rota - array contendo o caminho
+#   nome - nome do agente (ex: rota1)
+#   parametros - objeto contendo os valores para configuração do agente
 #   net - objeto para acessar o Mininet e enviar os comandos aos hosts
 #
-def procAgenteTelemetria(fila, tipo, rota, net):
-    nome = rota['nome']
-    caminho = rota['caminho']
-    #msg.debug("Agente telemetria, tipo=Latência rota [%s]= [%s]" % (nome, caminho))
+def procAgenteTelemetria(fila, tipo, nome, parametros, net):
     if tipo == 'latencia':
-        origem = caminho[0]
-        destino = caminho[-1]
+        origem = parametros[0]
+        destino = parametros[-1]
         host_origem = net.get(origem)
         host_destino = net.get(destino)
         ip_destino = host_destino.IP()

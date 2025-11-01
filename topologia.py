@@ -1,4 +1,5 @@
 from mininet.topo import Topo
+from rotas import gerarRotasEstaticas
 import json
 
 ################################################################################
@@ -8,8 +9,10 @@ class topologiaGenerica(Topo):
     switches_to_graph = []
     hosts_to_graph = []
     links_to_graph = []
+    rotas_estaticas = None
 
-    def __init__(self, topologia):
+    def __init__(self, config):
+        topologia = config.topologia
         # Inicializa a topologia
         Topo.__init__(self)
         # Lista de links
@@ -20,8 +23,10 @@ class topologiaGenerica(Topo):
             self.addHost(host)
             self.hosts_to_graph.append(host)
         cont = 1
+        self.switches_dpid = {}
         for switch in topologia['switches']:
             switches.append(switch)
+            self.switches_dpid.update( { switch: cont } )
             self.switches_to_graph.append(switch)
             self.addSwitch(switch)
             self.addSwitch(switch, dpid=hex(cont).lstrip("0x"))
@@ -33,8 +38,16 @@ class topologiaGenerica(Topo):
             banda = link['banda']
             atraso = link['atraso']
             perda = link['perda']
+            if banda == '':
+                banda = None
+            if atraso == '':
+                atraso = None
+            else:
+                atraso = f'{atraso}ms'
+            if perda == '':
+                perda = None
             # TODO: Inserir no link as restrições de banda, atraso e perda
-            self.addLink(a, b)
+            self.addLink(a, b, bw=banda, delay=atraso, loss=perda)
             self.links_to_graph.append((a, b))
 
     # Funcoes que retornam switches, links e hosts para geracao do grafo
@@ -44,5 +57,15 @@ class topologiaGenerica(Topo):
     def get_hosts_to_graph(self):
         return self.hosts_to_graph
 
+    def get_nodes_to_graph(self):
+        return self.hosts_to_graph + self.switches_to_graph
+
     def get_links_to_graph(self):
         return self.links_to_graph
+
+    def set_rotas_estaticas(self, rotas):
+        self.rotas_estaticas = rotas
+        return None
+
+    def get_rotas_estaticas(self):
+        return self.rotas_estaticas
