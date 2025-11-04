@@ -115,6 +115,8 @@ def substituirRotasDinamicas(lista_rotas, procurar_rotas):
     for i in range(len(lista_rotas)):
         rota = lista_rotas[i]
         chave = rota['procurar']
+        if chave == None:
+            continue
         # Verifica se foram encontradas rotas dinamicas
         if not chave in procurar_rotas:
             # Se não encontrou nenhuma, ignora a rota

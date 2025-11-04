@@ -75,8 +75,7 @@ def mininetFinaliza(net):
 def controladorInicializa(net, config, topologia):
     # método de roteamento configurado (ospf, ecmp ou otimizador externo)
     config_metodo = config.metodo
-    if True:
-    #try:
+    try:
         topologia.set_rotas_estaticas(gerarRotasEstaticas(config, topologia, net))
         # Lista de switches por dpid
         switches = []
@@ -135,8 +134,7 @@ def controladorInicializa(net, config, topologia):
         pid = controlador.pid
         sleep(2)
         msg.info(f"Controlador incializado com PID={pid}")
-    #except:
-    else:
+    except:
         msg.erro("Falha na incialização do controlador!!!")
         controlador = None
     return controlador
