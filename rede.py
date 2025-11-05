@@ -6,7 +6,6 @@ from subprocess import Popen
 from multiprocessing import Process
 from time import sleep
 import pickle
-from rotas import gerarRotasEstaticas
 
 ################################################################################
 # Inicializa o mininet, zera a configuração atual e carrega a topologia configurada
@@ -76,7 +75,6 @@ def controladorInicializa(net, config, topologia):
     # método de roteamento configurado (ospf, ecmp ou otimizador externo)
     config_metodo = config.metodo
     try:
-        topologia.set_rotas_estaticas(gerarRotasEstaticas(config, topologia, net))
         # Lista de switches por dpid
         switches = []
         for s in topologia.switches():
@@ -118,7 +116,6 @@ def controladorInicializa(net, config, topologia):
                 h = net.get(destino)
                 rotas.update( { h.IP(): saida } )
             rotas_estaticas.update( { dpid: rotas } )
-
         # Salva os dados da topologia no arquivo para o controlador
         with open("graph_topo.pickle", 'wb') as f:
             G = {}

@@ -20,8 +20,10 @@ class topologiaGenerica(Topo):
         # Lista de switches
         switches = []
         for host in topologia['hosts']:
-            self.addHost(host)
-            self.hosts_to_graph.append(host)
+            # ignora hosts com '#' no nome, serão inseridos posteriormente
+            if not '#' in host:
+                self.addHost(host)
+                self.hosts_to_graph.append(host)
         cont = 1
         self.switches_dpid = {}
         for switch in topologia['switches']:

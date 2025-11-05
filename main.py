@@ -5,6 +5,7 @@ from rede import mininetInicializa, controladorInicializa, controladorFinaliza, 
 from telemetria import telemetriaInicializaServidor, telemetriaInicializaAgentes, telemetriaFinalizaAgentes, telemetriaHistorico, telemetriaFinalizaServidor
 from topologia import topologiaGenerica
 from teste import testeExecuta
+from rotas import gerarRotasEstaticas
 
 ################################################################################
 # Programa principal
@@ -18,6 +19,10 @@ if __name__ == '__main__':
     msg.main("Criando a topologia de rede...")
     topologia = topologiaGenerica(config)
     if topologia == None:
+        msg.main("Finalizando por falha.")
+        exit(1)
+    msg.main("Gerando rotas estáticas...")
+    if gerarRotasEstaticas(config, topologia) == None:
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Gerando grafo da topologia...")
@@ -45,7 +50,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Executando os testes...")
-    testeExecuta(config.teste, net)
+    testeExecuta(config.testefluxo, net)
     msg.main("Finalizando agentes de telemetria...")
     telemetriaFinalizaAgentes(telemetriaAgentes)
     msg.main("Obtendo o resultado dos testes...")
@@ -57,8 +62,8 @@ if __name__ == '__main__':
     msg.main("Finalizando o mininet...")
     mininetFinaliza(net)
     msg.main("Salvando o resultado em arquivos...")
-    arquivosSalvar(resultado, config.telemetria, config.teste)
+    arquivosSalvar(resultado, config.telemetria, config.testefluxo)
     msg.main("Gerando os gráficos dos resultados...")
-    graficosGerar(resultado, config.telemetria, config.teste)
+    graficosGerar(resultado, config)
     msg.main("Fim do processamento.")
     exit(0)

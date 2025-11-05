@@ -37,7 +37,7 @@ def topologiaGerarGrafo(topologia, config_topologia, config_plotagem):
     pos = nx.nx_agraph.graphviz_layout(Gtopo, prog='circo', args='')
 
     plt.figure(figsize=(50,30))
-    plt.title("%s %s\n" % (descricao, config_topologia['descricao']), fontsize=60)
+    plt.title(descricao, fontsize=60)
 
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=sw, node_size=10000, node_color='g', label='Switches')
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=hs, node_size=10000, node_color='b', label='Hosts')
@@ -77,12 +77,16 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
 #
 # Parâmetros:
 #   resultado - dicionário contendo todos os dados obtidos pelo servidor de telemetria
-#   config_telemetria - configuração da telemetria
-#   config_teste - configuração dos testes executados
+#   config - objeto com a configuração do sistema
 # Retorno:
 #   None
 #
-def graficosGerar(resultado, config_telemetria, config_teste):
+def graficosGerar(resultado, config):
+    for item in config.plotagem:
+        if item['tipo'] == 'telemetria':
+            msg.debug('Gráfico de telemetria: ' + item['descricao'])
+        if item['tipo'] == 'testefluxo':
+            msg.debug('Gráfico de teste de fluxo: ' + item['descricao'])
     msg.info("Imagens dos gráficos salvos na pasta 'relatorios'.")
     return None
 
