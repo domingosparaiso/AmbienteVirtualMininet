@@ -33,22 +33,26 @@
 			"itens": [
 				{ 
 					"tipo": "iperf",
-					"duracao": 60,
-					"origem": "h11",
-					"destino": "h61",
-					"parametros": "",
+					"porta": "5001",
+					"duracao": 25,
+					"origem": "h10",
+					"destino": "h60",
+					"parametros_origem": "",
+					"parametros_destino": "",
 					"otimizador": "default"
 				},
 				{
 					"tipo": "delay",
-					"duracao": 60
+					"duracao": 10
 				},
 				{
 					"tipo": "iperf",
-					"duracao": 60,
-					"origem": "h11",
-					"destino": "h61",
-					"parametros": "",
+					"porta": "5001",
+					"duracao": 25,
+					"origem": "h10",
+					"destino": "h60",
+					"parametros_origem": "",
+					"parametros_destino": "",
 					"otimizador": "default"
 				}
 			]
@@ -58,10 +62,13 @@
 			"descricao": "Processo Dois",
 			"itens": [
 				{
-					"duracao": 180,
-					"origem": "h12",
-					"destino": "h62",
-					"parametros": "",
+					"tipo": "iperf",
+					"porta": "5002",
+					"duracao": 60,
+					"origem": "h10",
+					"destino": "h60",
+					"parametros_origem": "",
+					"parametros_destino": "",
 					"otimizador": "default"
 				}
 			]

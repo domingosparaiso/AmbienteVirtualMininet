@@ -74,6 +74,14 @@ def salvarTelemetria(item):
         baseDados.append( { 'datahora': datahora, 'valor': valor } )
         # Atualiza a base de dados da latência recebida
         DataLake.update({chave: baseDados})
+    if tipo == 'iperf':
+        nome = item['nome']
+        valor = item['valor']
+        datahora = item['datahora']
+        chave = tipo + '_' + nome
+        baseDados = DataLake.get(chave, [])
+        baseDados.append( { 'datahora': datahora, 'valor': valor } )
+        DataLake.update({chave: baseDados})
     return None
 
 ################################################################################

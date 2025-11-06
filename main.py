@@ -50,7 +50,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Executando os testes...")
-    testeExecuta(config.testefluxo, net)
+    testeExecuta(config.testefluxo, net, telemetriaServidor['fila'])
     msg.main("Finalizando agentes de telemetria...")
     telemetriaFinalizaAgentes(telemetriaAgentes)
     msg.main("Obtendo o resultado dos testes...")
