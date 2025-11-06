@@ -41,8 +41,17 @@ def procServidorTelemetria(fila, retorno):
             break
         # Envia os dados coletados quando receber um objeto do tipo 'dados'
         if item['tipo'] == 'dados':
+            inicio = None
+            fim = None
+            for chave, lista in DataLake.items():
+                primeiro  = next(iter(lista))
+                if inicio == None or primeiro < inicio:
+                    inicio = primeiro
+                ultimo = list(lista.keys())[-1]
+                if fim == None or ultimo > fim:
+                    fim = ultimo
             # Os dados coletados são enviados para a Queue de retorno
-            retorno.put(DataLake)
+            retorno.put((DataLake, inicio, fim))
         else:
             # Salva a nova informação de telemetria
             salvarTelemetria(item)
@@ -66,12 +75,12 @@ def salvarTelemetria(item):
         # cada telemetria possui uma chave diferente no formato "latencia_{nome}"
         chave = tipo + '_' + nome
         # Se a base já existe, obtem o histórico, se é nova, cria um array vazio
-        baseDados = DataLake.get(chave, [])
+        baseDados = DataLake.get(chave, {})
         agora = datetime.now()
         # Coleta contém data/hora atuais
         datahora = agora.strftime("%Y-%m-%d %H:%M:%S")        
         # TODO: Limitar no máximo de itens suportados
-        baseDados.append( { 'datahora': datahora, 'valor': valor } )
+        baseDados.update( { datahora: valor } )
         # Atualiza a base de dados da latência recebida
         DataLake.update({chave: baseDados})
     if tipo == 'iperf':
@@ -79,8 +88,8 @@ def salvarTelemetria(item):
         valor = item['valor']
         datahora = item['datahora']
         chave = tipo + '_' + nome
-        baseDados = DataLake.get(chave, [])
-        baseDados.append( { 'datahora': datahora, 'valor': valor } )
+        baseDados = DataLake.get(chave, {})
+        baseDados.update({ datahora: valor })
         DataLake.update({chave: baseDados})
     return None
 
@@ -156,15 +165,23 @@ def procAgenteTelemetria(fila, tipo, nome, parametros, net):
         host_origem = net.get(origem)
         host_destino = net.get(destino)
         ip_destino = host_destino.IP()
+        fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': 'BEGIN' } )
+        sleep(1)
+        linha_inicial = True
         while True:
             host_origem.sendCmd('ping %s' % (ip_destino))
             for host, line in net.monitor(hosts=[host_origem]):
                 try:
-                    valor = float(line.strip().split(' ')[6].split('=')[1])
+                    valor = str(float(line.strip().split(' ')[6].split('=')[1]))
+                    linha_inicial = False
                 except:
-                    valor = 0
-                #msg.debug("Enviando telemetria de '%s' para a fila" % (nome))
-                fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': valor } )
+                    if linha_inicial:
+                        valor = None
+                        linha_inicial = False
+                    else:
+                        valor = 'NO DATA'
+                if valor != None:
+                    fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': valor } )
     return None
 
 ################################################################################
@@ -172,13 +189,16 @@ def procAgenteTelemetria(fila, tipo, nome, parametros, net):
 #
 # Parâmetros:
 #   telemetriaAgentes - dicionário com os agentes que serão finalizados
+#   fila - fila do servidor de telemetria para indicar o fim do agente
 # Retorno:
 #   None
 #
-def telemetriaFinalizaAgentes(telemetriaAgentes):
+def telemetriaFinalizaAgentes(telemetriaAgentes, fila):
     for agente in telemetriaAgentes:
         nome = agente['nome']
         tipo = agente['tipo']
+        if tipo == 'latencia':
+            fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': 'END' } )
         msg.debug("Finalizando %s, tipo=%s" % (nome, tipo))
         processo = agente['processo']
         processo.terminate()
@@ -206,6 +226,8 @@ def telemetriaHistorico(telemetriaServidor):
     # Envia mensagem solicitando os dados coletados
     fila.put({'tipo': 'dados'})
     # Aguarda na fila o retorno do dicionário contendo os dados coletados
-    resultado = retorno.get()
+    resultado, inicio, fim = retorno.get()
     msg.info("Dados históricos carregados!")
+    msg.info(f'Intervalo: {inicio} a {fim}')
     return resultado
+

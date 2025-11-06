@@ -1,6 +1,7 @@
 import msg
 from time import sleep
 from multiprocessing import Process
+from datetime import datetime, timedelta
 import subprocess
 
 ################################################################################
@@ -60,6 +61,7 @@ def procTeste(teste, net, fila):
                     stdout_o, stderr_o = p_origem.communicate()
                     lista = stdout_d.decode().split('\n')
                     envia = False
+                    incializado = False
                     for linha in lista:
                         L = linha.split(' ')
                         if envia:
@@ -71,12 +73,22 @@ def procTeste(teste, net, fila):
                             except:
                                 valor = 0
                             datahora = ' '.join(linha.split(';')[0:2])
+                            if not incializado:
+                                incializado = True
+                                data = linha.split(';')[0:1][0].split('-')
+                                hora = linha.split(';')[1:2][0].split(':')
+                                dh = datetime(int(data[0]), int(data[1]), int(data[2]), int(hora[0]), int(hora[1]), int(hora[2])) - timedelta(seconds=1)
+                                agora = dh.strftime("%Y-%m-%d %H:%M:%S")
+                                fila.put( { 'tipo': 'iperf', 'nome': procid, 'valor': 'BEGIN', 'datahora': agora } )
                             fila.put( { 
                                 'tipo': 'iperf', 'nome': procid, 'valor': valor, 'datahora': datahora
                             } )
                         else:
                             if L[-1] == 'Bitrate':
                                 envia = True
+                    agora = datetime.now()
+                    datahora = agora.strftime("%Y-%m-%d %H:%M:%S")
+                    fila.put( { 'tipo': 'iperf', 'nome': procid, 'valor': 'END', 'datahora': datahora } )
                     continue
         msg.aviso(f'[{procid}] {tipo}: falha no item de teste.')
     msg.info(f'Fim de processo de teste [{procid}]: {descricao}')

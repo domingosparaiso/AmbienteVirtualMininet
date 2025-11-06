@@ -66,8 +66,8 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
     # TODO: Enviar os dados salvos
     for chave, lista in resultado.items():
         f = open(f'relatorios/{chave}.txt', 'w')
-        for item in lista:
-            f.write('%s\t%f\n' % (item['datahora'], item['valor']))
+        for datahora, valor in lista.items():
+            f.write('%s\t%s\n' % (datahora, valor))
         f.close()
     msg.info("Resultados salvos em arquivos na pasta 'relatorios'.")
     return None

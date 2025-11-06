@@ -52,7 +52,7 @@ if __name__ == '__main__':
     msg.main("Executando os testes...")
     testeExecuta(config.testefluxo, net, telemetriaServidor['fila'])
     msg.main("Finalizando agentes de telemetria...")
-    telemetriaFinalizaAgentes(telemetriaAgentes)
+    telemetriaFinalizaAgentes(telemetriaAgentes, telemetriaServidor['fila'])
     msg.main("Obtendo o resultado dos testes...")
     resultado = telemetriaHistorico(telemetriaServidor)
     msg.main("Finalizando o servidor de telemetria...")
