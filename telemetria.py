@@ -3,8 +3,7 @@ from multiprocessing import Queue
 from multiprocessing import Process
 from time import sleep
 from datetime import datetime
-
-DataLake = {}
+from dados import get_all, get_valores, get_eventos, set_valor, set_evento
 
 ################################################################################
 # Carrega em um novo processo o servidor de telemetria
@@ -41,17 +40,8 @@ def procServidorTelemetria(fila, retorno):
             break
         # Envia os dados coletados quando receber um objeto do tipo 'dados'
         if item['tipo'] == 'dados':
-            inicio = None
-            fim = None
-            for chave, lista in DataLake.items():
-                primeiro  = next(iter(lista))
-                if inicio == None or primeiro < inicio:
-                    inicio = primeiro
-                ultimo = list(lista.keys())[-1]
-                if fim == None or ultimo > fim:
-                    fim = ultimo
             # Os dados coletados são enviados para a Queue de retorno
-            retorno.put((DataLake, inicio, fim))
+            retorno.put(get_all())
         else:
             # Salva a nova informação de telemetria
             salvarTelemetria(item)
@@ -67,30 +57,21 @@ def procServidorTelemetria(fila, retorno):
 #
 def salvarTelemetria(item):
     tipo = item['tipo']
-    # Verifica e armazena de acordo com o tipo de dado recebido
-    if tipo == 'latencia':
-        nome = item['nome']
-        valor = item['valor']
-        #msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
-        # cada telemetria possui uma chave diferente no formato "latencia_{nome}"
-        chave = tipo + '_' + nome
-        # Se a base já existe, obtem o histórico, se é nova, cria um array vazio
-        baseDados = DataLake.get(chave, {})
-        agora = datetime.now()
-        # Coleta contém data/hora atuais
-        datahora = agora.strftime("%Y-%m-%d %H:%M:%S")        
-        # TODO: Limitar no máximo de itens suportados
-        baseDados.update( { datahora: valor } )
-        # Atualiza a base de dados da latência recebida
-        DataLake.update({chave: baseDados})
-    if tipo == 'iperf':
-        nome = item['nome']
-        valor = item['valor']
+    nome = item['nome']
+    valor = item['valor']
+    evento = item['evento']
+    if type(item['datahora']) == str:
+        str_datahora = item['datahora']
+        datahora = datetime.strptime(
+            str_datahora,
+            "%Y-%m-%d %H:%M:%S"
+        )
+    else:
         datahora = item['datahora']
-        chave = tipo + '_' + nome
-        baseDados = DataLake.get(chave, {})
-        baseDados.update({ datahora: valor })
-        DataLake.update({chave: baseDados})
+    if evento == None and valor != None:
+        set_valor(tipo, nome, datahora, valor)
+    if evento != None and valor == None:
+        set_evento(tipo, nome, datahora, evento)
     return None
 
 ################################################################################
@@ -165,23 +146,35 @@ def procAgenteTelemetria(fila, tipo, nome, parametros, net):
         host_origem = net.get(origem)
         host_destino = net.get(destino)
         ip_destino = host_destino.IP()
-        fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': 'BEGIN' } )
+        datahora = datetime.timestamp(datetime.now())
+        fila.put( { 
+            'tipo': 'latencia',
+            'nome': nome,
+            'datahora': datahora,
+            'valor': None,
+            'evento': 'BEGIN'
+        } )
         sleep(1)
         linha_inicial = True
         while True:
             host_origem.sendCmd('ping %s' % (ip_destino))
             for host, line in net.monitor(hosts=[host_origem]):
+                datahora = datetime.timestamp(datetime.now())
                 try:
                     valor = str(float(line.strip().split(' ')[6].split('=')[1]))
                     linha_inicial = False
                 except:
+                    valor = None
                     if linha_inicial:
-                        valor = None
                         linha_inicial = False
-                    else:
-                        valor = 'NO DATA'
                 if valor != None:
-                    fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': valor } )
+                    fila.put( {
+                        'tipo': 'latencia',
+                        'nome': nome,
+                        'datahora': datahora,
+                        'valor': valor,
+                        'evento': None
+                    } )
     return None
 
 ################################################################################
@@ -197,8 +190,14 @@ def telemetriaFinalizaAgentes(telemetriaAgentes, fila):
     for agente in telemetriaAgentes:
         nome = agente['nome']
         tipo = agente['tipo']
-        if tipo == 'latencia':
-            fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': 'END' } )
+        datahora = datetime.timestamp(datetime.now())
+        fila.put( { 
+            'tipo': tipo,
+            'nome': nome,
+            'datahora': datahora,
+            'valor': None,
+            'evento': 'END'
+        } )
         msg.debug("Finalizando %s, tipo=%s" % (nome, tipo))
         processo = agente['processo']
         processo.terminate()
@@ -226,8 +225,7 @@ def telemetriaHistorico(telemetriaServidor):
     # Envia mensagem solicitando os dados coletados
     fila.put({'tipo': 'dados'})
     # Aguarda na fila o retorno do dicionário contendo os dados coletados
-    resultado, inicio, fim = retorno.get()
+    resultado = retorno.get()
     msg.info("Dados históricos carregados!")
-    msg.info(f'Intervalo: {inicio} a {fim}')
     return resultado
 

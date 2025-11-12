@@ -72,23 +72,44 @@ def procTeste(teste, net, fila):
                                 valor = float(K[-2])
                             except:
                                 valor = 0
-                            datahora = ' '.join(linha.split(';')[0:2])
+                            str_datahora = ' '.join(linha.split(';')[0:2])
                             if not incializado:
                                 incializado = True
                                 data = linha.split(';')[0:1][0].split('-')
                                 hora = linha.split(';')[1:2][0].split(':')
                                 dh = datetime(int(data[0]), int(data[1]), int(data[2]), int(hora[0]), int(hora[1]), int(hora[2])) - timedelta(seconds=1)
-                                agora = dh.strftime("%Y-%m-%d %H:%M:%S")
-                                fila.put( { 'tipo': 'iperf', 'nome': procid, 'valor': 'BEGIN', 'datahora': agora } )
+                                #agora = dh.strftime("%Y-%m-%d %H:%M:%S")
+                                agora = datetime.timestamp(dh)
+                                fila.put( {
+                                    'tipo': 'iperf',
+                                    'nome': procid,
+                                    'datahora': agora,
+                                    'valor': None,
+                                    'evento': 'BEGIN'
+                                } )
+                            dh = datetime.strptime(
+                                str_datahora,
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            datahora = datetime.timestamp(dh)
                             fila.put( { 
-                                'tipo': 'iperf', 'nome': procid, 'valor': valor, 'datahora': datahora
+                                'tipo': 'iperf',
+                                'nome': procid,
+                                'datahora': datahora,
+                                'valor': valor,
+                                'evento': None
                             } )
                         else:
                             if L[-1] == 'Bitrate':
                                 envia = True
-                    agora = datetime.now()
-                    datahora = agora.strftime("%Y-%m-%d %H:%M:%S")
-                    fila.put( { 'tipo': 'iperf', 'nome': procid, 'valor': 'END', 'datahora': datahora } )
+                    datahora = datetime.timestamp(datetime.now())
+                    fila.put( {
+                        'tipo': 'iperf',
+                        'nome': procid,
+                        'datahora': datahora,
+                        'valor': None,
+                        'evento': 'END'
+                    } )
                     continue
         msg.aviso(f'[{procid}] {tipo}: falha no item de teste.')
     msg.info(f'Fim de processo de teste [{procid}]: {descricao}')

@@ -1,6 +1,7 @@
 import msg
 from configuracao import configuracaoCarregar
-from graficos import topologiaGerarGrafo, arquivosSalvar, graficosGerar
+from graficos import topologiaGerarGrafo, graficosGerar
+from relatorios import arquivosSalvar
 from rede import mininetInicializa, controladorInicializa, controladorFinaliza, mininetFinaliza
 from telemetria import telemetriaInicializaServidor, telemetriaInicializaAgentes, telemetriaFinalizaAgentes, telemetriaHistorico, telemetriaFinalizaServidor
 from topologia import topologiaGenerica
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     msg.main("Finalizando o mininet...")
     mininetFinaliza(net)
     msg.main("Salvando o resultado em arquivos...")
-    arquivosSalvar(resultado, config.telemetria, config.testefluxo)
+    arquivosSalvar(resultado)
     msg.main("Gerando os gráficos dos resultados...")
     graficosGerar(resultado, config)
     msg.main("Fim do processamento.")

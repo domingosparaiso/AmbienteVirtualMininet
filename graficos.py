@@ -53,26 +53,6 @@ def topologiaGerarGrafo(topologia, config_topologia, config_plotagem):
     return None
 
 ################################################################################
-# Salva o histórico de telemetria e dados de teste em arquivos texto
-#
-# Parâmetros:
-#   resultado - dicionário contendo todos os dados obtidos pelo servidor de telemetria
-#   config_telemetria - configuração da telemetria
-#   config_teste - configuração dos testes executados
-# Retorno:
-#   None
-#
-def arquivosSalvar(resultado, config_telemetria, config_teste):
-    # TODO: Enviar os dados salvos
-    for chave, lista in resultado.items():
-        f = open(f'relatorios/{chave}.txt', 'w')
-        for datahora, valor in lista.items():
-            f.write('%s\t%s\n' % (datahora, valor))
-        f.close()
-    msg.info("Resultados salvos em arquivos na pasta 'relatorios'.")
-    return None
-
-################################################################################
 # Gerar os gráficos de telemetria e dos testes realizados
 #
 # Parâmetros:
