@@ -8,8 +8,8 @@ if [ "$USER" == "root" ]; then
 	killall iperf3 2> /dev/null
 	python3 main.py
 	rm -f controller_routing_mode.tmp graph_topo.pickle
-	chown sdn:sdn relatorios/*
+	chown -R sdn:sdn relatorios
 else
-	sudo $0
+	sudo bash $0
 fi
 
