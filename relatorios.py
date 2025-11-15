@@ -11,6 +11,7 @@ from datetime import datetime
 #   None
 #
 def arquivosSalvar(resultado):
+    # Telemetria armazenada e dados de vazão
     valores = resultado['valores']
     for tipo, lista_nomes in valores.items():
         for nome, lista in lista_nomes.items():
@@ -28,7 +29,10 @@ def arquivosSalvar(resultado):
                     svalor = str(valor)
                 f.write('%s\t%s\n' % (datahora, svalor))
             f.close()
+    # Eventos registrados durante os testes
     eventos = resultado['eventos']
+    # Colocando em orgem cronológica
+    eventos.sort(key=lambda item: item['datahora'])
     f = open(f'relatorios/eventos.txt', 'w')
     for item in eventos:
         datahora = item['datahora']
@@ -36,6 +40,14 @@ def arquivosSalvar(resultado):
         nome = item['nome']
         evento = item['evento']
         f.write('%s\t%s\t%s\t%s\n' % (datahora, tipo, nome, evento))
+    f.close()
+    # Rotas
+    rotas = resultado['rotas']
+    f = open(f'relatorios/rotas.txt', 'w')
+    for item in rotas:
+        nome = item['nome']
+        caminho = '-'.join(item['caminho'])
+        f.write('%s: %s\n' % (nome, caminho))
     f.close()
     msg.info("Resultados salvos em arquivos na pasta 'relatorios'.")
     return None

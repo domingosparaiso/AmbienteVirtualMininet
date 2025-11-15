@@ -62,6 +62,7 @@ if __name__ == '__main__':
     controladorFinaliza(controlador)
     msg.main("Finalizando o mininet...")
     mininetFinaliza(net)
+    resultado.update( { 'rotas': config.topologia['rotas'] } )
     msg.main("Salvando o resultado em arquivos...")
     arquivosSalvar(resultado)
     msg.main("Gerando os gráficos dos resultados...")

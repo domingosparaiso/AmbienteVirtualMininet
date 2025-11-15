@@ -40,14 +40,26 @@ class topologiaGenerica(Topo):
             banda = link['banda']
             atraso = link['atraso']
             perda = link['perda']
-            if banda == '':
-                banda = None
+            if type(banda) == str:
+                if banda == '':
+                    banda = None
+                else:
+                    try:
+                        banda = int(banda)
+                    except:
+                        banda = None
             if atraso == '':
                 atraso = None
             else:
                 atraso = f'{atraso}ms'
-            if perda == '':
-                perda = None
+            if type(perda) == str:
+                if perda == '':
+                    perda = None
+                else:
+                    try:
+                        perda = int(perda)
+                    except:
+                        perda = None
             # TODO: Inserir no link as restrições de banda, atraso e perda
             self.addLink(a, b, bw=banda, delay=atraso, loss=perda)
             self.links_to_graph.append((a, b))
