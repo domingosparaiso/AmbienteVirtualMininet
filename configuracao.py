@@ -9,14 +9,15 @@ class configuracao():
     topologia = {}
     caminhos = []
     telemetria = []
-    teste = []
+    testefluxo = []
+    plotagem = []
     metodo = ""
     def load(self, json_context):
         try:
             self.topologia = json_context['topologia']
-            self.caminhos = json_context['caminhos']
             self.telemetria = json_context['telemetria']
-            self.teste = json_context['testefluxo']
+            self.testefluxo = json_context['testefluxo']
+            self.plotagem = json_context['plotagem']
             self.metodo = json_context['metodo']
             result = True
         except:

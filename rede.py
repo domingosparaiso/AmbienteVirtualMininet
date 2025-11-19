@@ -66,12 +66,14 @@ def mininetFinaliza(net):
 #
 # Parâmetros:
 #   net - objeto usado para acessar o mininet
-#   config_metodo - método de roteamento configurado (ospf, ecmp ou otimizador externo)
+#   config - objeto com toda a configuração do sistema
 #   topologia - objeto com a topologia a ser usada nos testes
 # Retorno:
 #   objeto para acessar o controlador
 #
-def controladorInicializa(net, config_metodo, topologia):
+def controladorInicializa(net, config, topologia):
+    # método de roteamento configurado (ospf, ecmp ou otimizador externo)
+    config_metodo = config.metodo
     try:
         # Lista de switches por dpid
         switches = []
@@ -105,11 +107,21 @@ def controladorInicializa(net, config_metodo, topologia):
                     h = net.get(node2)
                     links.append((node1_dpid, h.MAC(), {'port':int(port1)}))
                     mac_to_switch[h.MAC()] = node1_dpid
-        # Salva os dados da topologia no arquivo para o controlador ler e montar o grafo
+
+        # Atualizando o IP de destino nas rotas estáticas
+        rotas_estaticas = {}
+        for dpid, lista in topologia.rotas_estaticas.items():
+            rotas = {}
+            for destino, saida in lista.items():
+                h = net.get(destino)
+                rotas.update( { h.IP(): saida } )
+            rotas_estaticas.update( { dpid: rotas } )
+        # Salva os dados da topologia no arquivo para o controlador
         with open("graph_topo.pickle", 'wb') as f:
             G = {}
             G['nodes'] = sorted(switches)
             G['edges'] = links
+            G['rotas'] = rotas_estaticas
             # Dicionario com o IP e o MAC dos hosts
             G['ip_to_mac'] = {host.IP(): host.MAC() for host in net.hosts}
             G['mac_to_switch'] = mac_to_switch

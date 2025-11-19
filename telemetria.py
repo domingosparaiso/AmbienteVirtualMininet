@@ -3,8 +3,7 @@ from multiprocessing import Queue
 from multiprocessing import Process
 from time import sleep
 from datetime import datetime
-
-DataLake = {}
+from dados import get_all, get_valores, get_eventos, set_valor, set_evento
 
 ################################################################################
 # Carrega em um novo processo o servidor de telemetria
@@ -36,11 +35,15 @@ def telemetriaInicializaServidor():
 def procServidorTelemetria(fila, retorno):
     while True:
         item = fila.get()
+        # Encerra o processo quando receber o valor None na fila
         if item is None:
             break
+        # Envia os dados coletados quando receber um objeto do tipo 'dados'
         if item['tipo'] == 'dados':
-            retorno.put(DataLake)
+            # Os dados coletados são enviados para a Queue de retorno
+            retorno.put(get_all())
         else:
+            # Salva a nova informação de telemetria
             salvarTelemetria(item)
     return None
 
@@ -54,17 +57,21 @@ def procServidorTelemetria(fila, retorno):
 #
 def salvarTelemetria(item):
     tipo = item['tipo']
-    if tipo == 'latencia':
-        nome = item['nome']
-        valor = item['valor']
-        msg.debug("Recebida telemetria: %s valor=%s" % (nome, valor))
-        chave = tipo + '_' + nome
-        baseDados = DataLake.get(chave, [])
-        agora = datetime.now()
-        datahora = agora.strftime("%Y-%m-%d %H:%M:%S")        
-        # TODO: Limitar no máximo de itens suportados
-        baseDados.append( { 'datahora': datahora, 'valor': valor } )
-        DataLake.update({chave: baseDados})
+    nome = item['nome']
+    valor = item['valor']
+    evento = item['evento']
+    if type(item['datahora']) == str:
+        str_datahora = item['datahora']
+        datahora = datetime.strptime(
+            str_datahora,
+            "%Y-%m-%d %H:%M:%S"
+        )
+    else:
+        datahora = item['datahora']
+    if evento == None and valor != None:
+        set_valor(tipo, nome, datahora, valor)
+    if evento != None and valor == None:
+        set_evento(tipo, nome, datahora, evento)
     return None
 
 ################################################################################
@@ -76,7 +83,9 @@ def salvarTelemetria(item):
 #   None
 #
 def telemetriaFinalizaServidor(telemetriaServidor):
+    # Sinaliza ao servidor que vamos finalizar colocando None na fila
     telemetriaServidor['fila'].put(None)
+    # Aguarda o processo do servidor finalizar
     telemetriaServidor['processo'].join()
     msg.info("Servidor de telemetria finalizado!")
     return None
@@ -92,21 +101,29 @@ def telemetriaFinalizaServidor(telemetriaServidor):
 #   Dicionário contendo os objetos de acesso aos agentes
 #
 def telemetriaInicializaAgentes(config, telemetriaServidor, net):
+    # Lista de agentes ativos
     telemetriaAgentes = []
+    # Queue onde o servidor de telemetria aguarda os valores
     fila = telemetriaServidor['fila']
+    config_topologia = config.topologia
     config_telemetria = config.telemetria
+    # Passar por todas as telemetrias configuradas
     for item in config_telemetria:
         tipo = item['tipo']
+        # Tratar de acordo com o tipo
         if tipo == 'latencia':
             for origem in item['origens']:
-                if origem == 'caminhos':
-                    for rota in config.caminhos:
-                        processo = Process(target=procAgenteTelemetria, args=(fila, tipo, rota, net))
+                # Quando origem == 'rotas', pegar da lista na configuração
+                if origem == 'rotas':
+                    for rota in config_topologia['rotas']:
+                        # Inicia um processo de agente
+                        processo = Process(target=procAgenteTelemetria, args=(fila, tipo, rota['nome'], rota['caminho'], net))
                         processo.start()
+                        # Armazena os dados do processo para controle futuro
                         telemetriaAgentes.append( { 
                             'tipo': tipo,
                             'nome': rota['nome'],
-                            'caminho': rota['caminho'],
+                            'parametros': rota['caminho'],
                             'processo': processo
                         } )
     msg.info("Agentes de telemetria inicializados!")
@@ -118,28 +135,54 @@ def telemetriaInicializaAgentes(config, telemetriaServidor, net):
 # Parâmetros:
 #   fila - objeto Queue para onde os dados devem ser enviados (servidor)
 #   tipo - tipo de telemetria (ex: latência)
-#   rota - array contendo o caminho
+#   nome - nome do agente (ex: rota1)
+#   parametros - objeto contendo os valores para configuração do agente
 #   net - objeto para acessar o Mininet e enviar os comandos aos hosts
 #
-def procAgenteTelemetria(fila, tipo, rota, net):
-    nome = rota['nome']
-    caminho = rota['caminho']
-    #msg.debug("Agente telemetria, tipo=Latência rota [%s]= [%s]" % (nome, caminho))
+def procAgenteTelemetria(fila, tipo, nome, parametros, net):
     if tipo == 'latencia':
-        origem = caminho[0]
-        destino = caminho[-1]
+        origem = parametros[0]
+        destino = parametros[-1]
         host_origem = net.get(origem)
         host_destino = net.get(destino)
         ip_destino = host_destino.IP()
+        datahora = datetime.timestamp(datetime.now())
+        fila.put( { 
+            'tipo': 'latencia',
+            'nome': nome,
+            'datahora': datahora,
+            'valor': None,
+            'evento': 'BEGIN'
+        } )
+        sleep(1)
+        linha_inicial = True
         while True:
             host_origem.sendCmd('ping %s' % (ip_destino))
             for host, line in net.monitor(hosts=[host_origem]):
+                datahora = datetime.timestamp(datetime.now())
                 try:
-                    valor = float(line.strip().split(' ')[6].split('=')[1])
+                    valor = str(float(line.strip().split(' ')[6].split('=')[1]))
+                    linha_inicial = False
                 except:
-                    valor = 0
-                #msg.debug("Enviando telemetria de '%s' para a fila" % (nome))
-                fila.put( { 'tipo': 'latencia', 'nome': nome, 'valor': valor } )
+                    valor = None
+                    if linha_inicial:
+                        linha_inicial = False
+#                    else:
+#                        fila.put( {
+#                            'tipo': 'latencia',
+#                            'nome': nome,
+#                            'datahora': datahora,
+#                            'valor': None,
+#                            'evento': line
+#                        } )
+                if valor != None:
+                    fila.put( {
+                        'tipo': 'latencia',
+                        'nome': nome,
+                        'datahora': datahora,
+                        'valor': valor,
+                        'evento': None
+                    } )
     return None
 
 ################################################################################
@@ -147,13 +190,22 @@ def procAgenteTelemetria(fila, tipo, rota, net):
 #
 # Parâmetros:
 #   telemetriaAgentes - dicionário com os agentes que serão finalizados
+#   fila - fila do servidor de telemetria para indicar o fim do agente
 # Retorno:
 #   None
 #
-def telemetriaFinalizaAgentes(telemetriaAgentes):
+def telemetriaFinalizaAgentes(telemetriaAgentes, fila):
     for agente in telemetriaAgentes:
         nome = agente['nome']
         tipo = agente['tipo']
+        datahora = datetime.timestamp(datetime.now())
+        fila.put( { 
+            'tipo': tipo,
+            'nome': nome,
+            'datahora': datahora,
+            'valor': None,
+            'evento': 'END'
+        } )
         msg.debug("Finalizando %s, tipo=%s" % (nome, tipo))
         processo = agente['processo']
         processo.terminate()
@@ -184,3 +236,4 @@ def telemetriaHistorico(telemetriaServidor):
     resultado = retorno.get()
     msg.info("Dados históricos carregados!")
     return resultado
+

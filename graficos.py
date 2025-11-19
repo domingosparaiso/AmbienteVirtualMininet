@@ -8,11 +8,20 @@ import matplotlib.pyplot as plt
 #   configuração em <topology.name>
 #
 # Parâmetros:
-#   topologia - configuração da topologia a ser usada
+#   topologia - objeto contendo a topologia em uso
+#   config_topologia - configuração da topologia a ser usada
+#   config_plotagem - informações sobre a plotagem do grafo
 # Retorno:
 #   None
 #
-def topologiaGerarGrafo(topologia, config_topologia):
+def topologiaGerarGrafo(topologia, config_topologia, config_plotagem):
+    descricao = None
+    for item in config_plotagem:
+        if item['tipo'] == 'topologia':
+            descricao = item['descricao']
+    if descricao == None:
+        msg.aviso('Grafo da topologia não foi configurado.')
+        return None
     # Cria o grafo da topologia
     Gtopo = nx.DiGraph() # Grafo da topologia
 
@@ -28,7 +37,7 @@ def topologiaGerarGrafo(topologia, config_topologia):
     pos = nx.nx_agraph.graphviz_layout(Gtopo, prog='circo', args='')
 
     plt.figure(figsize=(50,30))
-    plt.title("Topologia: %s\n" % config_topologia['descricao'], fontsize=60)
+    plt.title(descricao, fontsize=60)
 
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=sw, node_size=10000, node_color='g', label='Switches')
     nx.draw_networkx_nodes(Gtopo,pos, nodelist=hs, node_size=10000, node_color='b', label='Hosts')
@@ -37,30 +46,10 @@ def topologiaGerarGrafo(topologia, config_topologia):
     
     plt.axis('off')
     plt.legend(handletextpad=1.0, labelspacing=2.5, borderpad=1, fontsize=40, shadow=True)
-    plt.savefig("relatorios/%s.png" % config_topologia['nome'])
+    plt.savefig("relatorios/topologia_%s.png" % config_topologia['nome'])
     plt.clf()
 
     msg.info("Grafo da topologia gerado na pasta 'relatorios'.")
-    return None
-
-################################################################################
-# Salva o histórico de telemetria e dados de teste em arquivos texto
-#
-# Parâmetros:
-#   resultado - dicionário contendo todos os dados obtidos pelo servidor de telemetria
-#   config_telemetria - configuração da telemetria
-#   config_teste - configuração dos testes executados
-# Retorno:
-#   None
-#
-def arquivosSalvar(resultado, config_telemetria, config_teste):
-    # TODO: Enviar os dados salvos
-    for chave, lista in resultado.items():
-        f = open(f'relatorios/{chave}.txt', 'w')
-        for item in lista:
-            f.write('%s\t%f\n' % (item['datahora'], item['valor']))
-        f.close()
-    msg.info("Resultados salvos em arquivos na pasta 'relatorios'.")
     return None
 
 ################################################################################
@@ -68,12 +57,16 @@ def arquivosSalvar(resultado, config_telemetria, config_teste):
 #
 # Parâmetros:
 #   resultado - dicionário contendo todos os dados obtidos pelo servidor de telemetria
-#   config_telemetria - configuração da telemetria
-#   config_teste - configuração dos testes executados
+#   config - objeto com a configuração do sistema
 # Retorno:
 #   None
 #
-def graficosGerar(resultado, config_telemetria, config_teste):
+def graficosGerar(resultado, config):
+    for item in config.plotagem:
+        if item['tipo'] == 'telemetria':
+            msg.debug('Gráfico de telemetria: ' + item['descricao'])
+        if item['tipo'] == 'testefluxo':
+            msg.debug('Gráfico de teste de fluxo: ' + item['descricao'])
     msg.info("Imagens dos gráficos salvos na pasta 'relatorios'.")
     return None
 

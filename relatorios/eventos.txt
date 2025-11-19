@@ -1,0 +1,8 @@
+2025-11-18 12:01:12	latencia	rota_h11_h61	BEGIN
+2025-11-18 12:01:12	latencia	rota_h12_h62	BEGIN
+2025-11-18 12:01:12	latencia	rota_h13_h63	BEGIN
+2025-11-18 12:01:12	latencia	rota_h14_h64	BEGIN
+2025-11-18 12:01:13	latencia	rota_h11_h61	END
+2025-11-18 12:01:13	latencia	rota_h12_h62	END
+2025-11-18 12:01:13	latencia	rota_h13_h63	END
+2025-11-18 12:01:13	latencia	rota_h14_h64	END

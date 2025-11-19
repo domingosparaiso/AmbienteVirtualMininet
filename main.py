@@ -1,10 +1,13 @@
 import msg
 from configuracao import configuracaoCarregar
-from graficos import topologiaGerarGrafo, arquivosSalvar, graficosGerar
+from graficos import topologiaGerarGrafo, graficosGerar
+from relatorios import arquivosSalvar
 from rede import mininetInicializa, controladorInicializa, controladorFinaliza, mininetFinaliza
 from telemetria import telemetriaInicializaServidor, telemetriaInicializaAgentes, telemetriaFinalizaAgentes, telemetriaHistorico, telemetriaFinalizaServidor
 from topologia import topologiaGenerica
 from teste import testeExecuta
+from rotas import gerarRotasEstaticas
+#from mininet.cli import CLI
 
 ################################################################################
 # Programa principal
@@ -16,19 +19,23 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Criando a topologia de rede...")
-    topologia = topologiaGenerica(config.topologia)
+    topologia = topologiaGenerica(config)
     if topologia == None:
         msg.main("Finalizando por falha.")
         exit(1)
+    msg.main("Gerando rotas estáticas...")
+    if gerarRotasEstaticas(config, topologia) == None:
+        msg.main("Finalizando por falha.")
+        exit(1)
     msg.main("Gerando grafo da topologia...")
-    topologiaGerarGrafo(topologia, config.topologia)
+    topologiaGerarGrafo(topologia, config.topologia, config.plotagem)
     msg.main("Inicializando o mininet com a topologia...")
     net = mininetInicializa(topologia)
     if net == None:
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Inicializando o controlador...")
-    controlador = controladorInicializa(net, config.metodo, topologia)
+    controlador = controladorInicializa(net, config, topologia)
     if controlador == None:
         msg.main("Finalizando por falha.")
         exit(1)
@@ -45,11 +52,12 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Executando os testes...")
-    testeExecuta(config.teste, net)
+    testeExecuta(config.testefluxo, net, telemetriaServidor['fila'], config.topologia)
     msg.main("Finalizando agentes de telemetria...")
-    telemetriaFinalizaAgentes(telemetriaAgentes)
+    telemetriaFinalizaAgentes(telemetriaAgentes, telemetriaServidor['fila'])
     msg.main("Obtendo o resultado dos testes...")
     resultado = telemetriaHistorico(telemetriaServidor)
+    #CLI(net)
     msg.main("Finalizando o servidor de telemetria...")
     telemetriaFinalizaServidor(telemetriaServidor)
     msg.main("Finalizando o controlador...")
@@ -57,8 +65,8 @@ if __name__ == '__main__':
     msg.main("Finalizando o mininet...")
     mininetFinaliza(net)
     msg.main("Salvando o resultado em arquivos...")
-    arquivosSalvar(resultado, config.telemetria, config.teste)
+    arquivosSalvar(resultado)
     msg.main("Gerando os gráficos dos resultados...")
-    graficosGerar(resultado, config.telemetria, config.teste)
+    graficosGerar(resultado, config)
     msg.main("Fim do processamento.")
     exit(0)

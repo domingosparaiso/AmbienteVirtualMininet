@@ -1,40 +1,34 @@
 {
 	"metodo": "ospf",
 	"topologia": {
-		"descricao": "Rede de Teste",
 		"nome": "generica",
 		"switches": [
 			"s1","s2","s3","s4","s5","s6"
 		],
 		"hosts": [
-			"h11","h12","h13","h14","h61","h62","h63","h64"
+			"h10","h20","h30","h40","h50","h60"
 		],
 		"links": [
-			{ "pontos": ["s1", "s2"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "s3"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s2", "s4"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s3", "s4"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s3", "s5"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s4", "s6"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s5", "s6"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "h11"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "h12"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "h13"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "h14"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h61"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h62"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h63"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h64"], "banda": "", "atraso": "", "perda":"" }
+			{ "pontos": ["s1", "s2"], "banda": 1, "atraso": "12", "perda":"" },
+			{ "pontos": ["s1", "s4"], "banda": 1, "atraso": "2", "perda":"" },
+			{ "pontos": ["s2", "s3"], "banda": 1, "atraso": "5", "perda":"" },
+			{ "pontos": ["s2", "s5"], "banda": 1, "atraso": "5", "perda":"" },
+			{ "pontos": ["s3", "s6"], "banda": 1, "atraso": "3", "perda":"" },
+			{ "pontos": ["s4", "s5"], "banda": 1, "atraso": "3", "perda":"" },
+			{ "pontos": ["s5", "s6"], "banda": 1, "atraso": "15", "perda":"" },
+			{ "pontos": ["s1", "h10"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s2", "h20"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s3", "h30"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s4", "h40"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s5", "h50"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h60"], "banda": 1, "atraso": "", "perda":"" }
+		],
+		"rotas": [
+			{ "nome": "rota_h1#_h6#", "caminho": ["h1#","s1","*","s6","h6#"], "limite": 4 }
 		]
 	},
-	"caminhos": [
-		{ "nome": "rota1", "caminho": ["h11","s1","s3","s5","s6","h61"]} ,
-		{ "nome": "rota2", "caminho": ["h12","s1","s2","s4","s6","h62"]} ,
-		{ "nome": "rota3", "caminho": ["h13","s1","s3","s4","s6","h63"]} ,
-		{ "nome": "rota4", "caminho": ["h14","s1","s2","s4","s3","s5","s6","h64"]}
-	],
 	"telemetria": [
-		{ "tipo": "latencia", "origens": [ "caminhos" ] }
+		{ "tipo": "latencia", "origens": [ "rotas" ] }
 	],
 	"testefluxo": [
 		{
@@ -42,36 +36,11 @@
 			"descricao": "Processo Um",
 			"itens": [
 				{ 
-					"tipo": "iperf",
-					"duracao": 60,
-					"origem": "h11",
-					"destino": "h61",
-					"parametros": "",
-					"otimizador": "default"
-				},
-				{
-					"tipo": "delay",
-					"duracao": 60
-				},
-				{
-					"tipo": "iperf",
-					"duracao": 60,
-					"origem": "h11",
-					"destino": "h61",
-					"parametros": "",
-					"otimizador": "default"
-				}
-			]
-		},
-		{
-			"id": "proc2",
-			"descricao": "Processo Dois",
-			"itens": [
-				{
-					"duracao": 180,
-					"origem": "h12",
-					"destino": "h62",
-					"parametros": "",
+					"tipo": "poisson",
+					"porta": "5001",
+					"lambda": 4,
+					"duracao": 5,
+					"tamanhofluxo": 10,
 					"otimizador": "default"
 				}
 			]
@@ -80,19 +49,19 @@
 	"plotagem": [
 		{
 			"tipo": "topologia",
-			"descricao": "Topologia"
+			"descricao": "Topologia de Teste"
 		},
 		{
-			"descricao": "Latência",
 			"tipo": "telemetria",
+			"descricao": "Latência das Rotas",
 			"origens": {
-				"latencia": [ "caminhos" ]
+				"latencia": [ "rotas" ]
 				}
 		},
 		{
-			"descricao": "Fluxo",
 			"tipo": "testefluxo",
-			"origens": [ "proc1", "proc2" ]
+			"descricao": "Fluxos de Dados",
+			"origens": [ "proc1" ]
 		}
 	]
 }

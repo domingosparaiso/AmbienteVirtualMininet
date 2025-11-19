@@ -1,0 +1,71 @@
+main.py -> controladorInicializa()
+	topologia.rotas_estaticas = gerarRotasEstaticas(config,topologia,net)
+
+gerarRotasEstaticas()
+	rotas = config.topologia['rotas']
+		# rotas = [ [ 'h11','s1','*','s4','h41'],   <- dinâmica (1ª rota)
+		#			[ 'h12','s1','*','s4','h42'],   <- dinâmica (2ª rota)
+		#			[ 'h10', 's1', 's4', 's40'] ]   <- estática
+	lista_rotas, procurar_rotas = organizaRotas(rotas)
+		# lista_rotas = {
+		#		{ 'procurar': 's1:s4','caminho': [ 'h11','s1','*','s4','h41' ] },
+		#		{ 'procurar': 's1:s4','caminho': [ 'h12','s1','*','s4','h42' ] },
+		#		{ 'procurar': None,'caminho': [ 'h10','s1','s4','h40' ] } }
+		# procurar_rotas = { 's1:s4': {
+				'switch_origem': 's1',
+				'switch_destino': 's4',
+				'rotas': [ ],
+				'num_rotas': 0,
+				'indice': 0
+			}
+		}
+	Gtopo = grafoTopologia(topologia)
+	procurar_rotas = expandirRotasDinamicas(procurar_rotas, Gtopo)
+		# procurar_rotas = { 's1:s6': {
+				'switch_origem': 's1',
+				'switch_destino': 's4',
+				'rotas': [ [ 's1', 's2', 's4' ], [ 's1', 's3', 's4' ] ],
+				'num_rotas': 2,
+				'indice': 0
+			}
+		}
+	lista_rotas = substituirRotasDinamicas(lista_rotas, procurar_rotas)
+		# lista_rotas = {
+		#		{ 'procurar': 's1:s4','caminho': [ 'h11','s1','s2','s4','h41' ] },
+		#		{ 'procurar': 's1:s4','caminho': [ 'h12','s1','s3','s4','h42' ] },
+		#		{ 'procurar': None,'caminho': [ 'h10','s1','s4','h40' ] } }
+	#switches_dpid = { 's1':1, 's2':2, 's3':3, 's4':4 }
+	rotas_estaticas = converteDPID(lista_rotas, topologia)
+		# rotas_estaticas = {
+		#	1: { 'h41': 's2', 'h42': 's3', 'h40', 's4' },
+		#	2: { 'h41': 's4', 'h11': 's1', 'h42': 's4', 'h12': 's1' },
+		#	3: { 'h41': 's4', 'h11': 's1', 'h42': 's4', 'h12': 's1' },
+		#	4: { 'h11': 's2', 'h12': 's3', 'h10', 's1' } }
+
+# h10 - 10.0.0.1
+# h11 - 10.0.0.2
+# h12 - 10.0.0.3
+# h40 - 10.0.0.4
+# h41 - 10.0.0.5
+# h42 - 10.0.0.6
+controller.py
+	# rotas_estaticas = {
+	#	1: { '10.0.0.5': 's2', '10.0.0.6': 's3', '10.0.0.4', 's4' },
+	#	2: { '10.0.0.5': 's4', '10.0.0.2': 's1', '10.0.0.6': 's4', '10.0.0.3': 's1' },
+	#	3: { '10.0.0.5': 's4', '10.0.0.2': 's1', '10.0.0.6': 's4', '10.0.0.3': 's1' },
+	#	4: { '10.0.0.2': 's2', '10.0.0.3': 's3', '10.0.0.1', 's1' } }
+
+                 +----+
+            1   1| s2 |2   1
+h10 |  3+----+---+----+---+----+3  | h40
+h11 |---| s1 |            | s4 |---| h41
+h12 |   +----+---+----+---+----+   | h42
+         4| 2   1| s3 |2   2 |4
+          |      +----+      |
+          +------------------+
+
+	# rotas_estaticas = {
+	#	1: { '10.0.0.5': 1, '10.0.0.6': 2, '10.0.0.4', 4 },
+	#	2: { '10.0.0.5': 2, '10.0.0.2': 1, '10.0.0.6': 1, '10.0.0.3': 4 },
+	#	3: { '10.0.0.5': 2, '10.0.0.2': 1, '10.0.0.6': 1, '10.0.0.3': 4 },
+	#	4: { '10.0.0.2': 1, '10.0.0.3': 2, '10.0.0.1', 4 } }
