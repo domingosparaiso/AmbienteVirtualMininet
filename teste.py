@@ -29,9 +29,6 @@ def testeExecuta(config_testes, net, fila, config_topologia):
     msg.info("Todos os testes foram executados!")
     return None
 
-# todo: atualizar para permitir testes de poisson
-## nova função: entre todos os hosts
-## 
 def procTeste(teste, net, fila, topologia):
     procid = teste['id']
     descricao = teste['descricao']
@@ -131,32 +128,35 @@ def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
     if len(hosts) > 0:
         msg.info("\n*** Running all-to-all poison tests\n")
 
-        #arq_bwm = f"relatorios/poisson-tmp.bwm"
-        #monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
+        arq_bwm = f"relatorios/poisson-tmp.bwm"
+        monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
+        monitor_bw.start()
 
         processos = []
+        counter = 0
 
         for origem in hosts:
             for destino in hosts:
                 if origem != destino:
                     src = net.get(origem)
                     dst = net.get(destino)
+                    counter += 1
 
-                    processo = Process(target=generate_flows, args=(lambdarate, duracao, tamanhofluxo, src, dst))
+                    processo = Process(target=generate_flows, args=(lambdarate, duracao, tamanhofluxo, src, dst, counter,))
                     processos.append(processo)
                     processo.start()
-
+        
         for processo in processos:
             processo.join()
         
         print('acabou de verdade')
-        #os.system("killall bwm-ng")
+        os.system("killall bwm-ng")
 
-# Function to generate iperf flows with a fixed size, 
-def generate_flows(lambda_rate, duration, flow_size_kb, src, dst):
+
+def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
     """
-    Generate iperf TCP flows from a fixed source to a fixed destination based on a Poisson distribution
-    for the initiation rate. Each flow uses a fixed size of 100KB.
+    Generate iperf TCP flows from a fixed source to a fixed destination based 
+    on a Poisson distribution for the initiation rate.
     
     :param net: Mininet network object
     :param src: Source host for iperf flows
@@ -164,42 +164,41 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst):
     :param lambda_rate: Average rate (events per second) for the Poisson distribution
     :param duration: Duration to run the experiment
     :param flow_size_kb: Fixed size of each flow (in Kilobytes)
+    :param counter: process number (for multiprocessing)
     """
+    base_port = 5000
+    port = base_port + counter * 500   # range exclusivo por processo
+
+    # Define the fixed flow size in bytes
+    flow_size_bytes = flow_size_kb * 1024  # Convert size to bytes
+    
+    # Convert bytes to megabytes for iperf usage
+    flow_size_mb = flow_size_bytes / (1024 * 1024)
 
     end_time = time.time() + duration
-    port = 5001  # Starting port number
-    
+
     while time.time() < end_time:
         # Generate time until the next event using Poisson distribution
-        delay = np.random.poisson(1 / lambda_rate)
+        delay = np.random.exponential(1/lambda_rate)
         time.sleep(delay)
-        
-        # Define the fixed flow size in bytes
-        flow_size_bytes = flow_size_kb * 1024  # Convert size to bytes
-        
-        # Convert bytes to megabytes for iperf usage
-        flow_size_mb = flow_size_bytes / (1024 * 1024)
-        
+
+        dst_port = port
+
         # Check if the port is available
-        if port > 65535:
+        if dst_port > 65535:
             print("Port number exceeded range.")
             break
-        
+
         # Start iperf server on the destination host if not already running
-        dst_port = port
-        if not dst.cmd(f'netstat -an | grep {dst_port}'):
-            dst.cmd(f'iperf3 -s -1 -p {dst_port} &')
-        
+        dst.popen(f'iperf3 -s -1 -p {dst_port}')
+
         # Start iperf client on the source host
-        # print("TCP mouse flows from H2 to H5")
-        src.cmd(f'iperf3 -c {dst.IP()} -p {dst_port} -n {flow_size_mb:.2f}M &')
-        print(f'iperf {src.name} to {dst.name} ')
-        
+        src.popen(f'iperf3 -c {dst.IP()} -p {dst_port} -n {flow_size_mb:.2f}M')
+
         # Increment the port number for the next flow
         port += 1
-    
-    print('finalizado')
 
+    print(f'Processo {counter} finalizado')
 
 def monitor_bwm_ng(fname, interval_sec):
     cmd = f"sleep 1; bwm-ng -t {interval_sec * 1000} -o csv -u bytes -T rate -C ',' > {fname}"
