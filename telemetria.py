@@ -167,14 +167,6 @@ def procAgenteTelemetria(fila, tipo, nome, parametros, net):
                     valor = None
                     if linha_inicial:
                         linha_inicial = False
-#                    else:
-#                        fila.put( {
-#                            'tipo': 'latencia',
-#                            'nome': nome,
-#                            'datahora': datahora,
-#                            'valor': None,
-#                            'evento': line
-#                        } )
                 if valor != None:
                     fila.put( {
                         'tipo': 'latencia',

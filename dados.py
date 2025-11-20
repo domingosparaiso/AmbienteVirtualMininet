@@ -4,13 +4,9 @@
 # Estrutura do DataLake
 # {
 #   tipo1: {
-#       nome1: {
-#           'valores': {
+#       nome1: [
 #               { tempo1: valor1 }, { tempo2: valor2 },...
-#           },
-#           'evento': {
-#               { tempo1: evento1 }, { tempo2: evento2 },...
-#           }
+#           ],
 #       },...
 #   },...
 # }
@@ -22,17 +18,13 @@ SIZE_CACHE = 10000
 DataLake = {}
 LogEventos = []
 
-# get_dados - Consulta a base de dados temporal e retorna os dados interpolados dentro dos limites indicados
+# get_all - retorna todos os valores e eventos coletados durante os testes
 #
 # Parâmetros:
-#   filtro_tipo - tipos de dados que se procura, ex: 'latencia', ou '*' para todos os dados.
-#   nome_filtro - nome do agente que criou os dados, ex: 'rota1', 'teste', ou '*' para todos os agentes
-#   inicio, fim - data e hora de início e fim, pode ser um valor numérico equivalente a datetime.timestamp(datahora)
-#       se for informado '*' o valor usado é a data e hora atuais, se iniciar com '-' deve ser seguido por um valor
-#       inteiro e um sufixo ('h', 'm' ou 's') que indica o tempo relativo ao tempo atual (horas, minutos ou segundos)
-#   intervalo - intervalo em segundos que deve ser usado para interpolar os resultados
+#   None
 # Retorno:
-#   dicionário contendo os dados selecionados dentro do intervalo indicado
+#   { 'valores': <Dicionário com os Valores>, 'eventos': <Lista de Eventos> }
+#   os valores vem do DataLake e os eventos do LogEventos
 #
 def get_all():
     resultado = { 'valores': {}, 'eventos': [] }
@@ -51,6 +43,20 @@ def get_all():
         resultado['valores'] = get_valores('*', '*', minimo, maximo, 1)
     return resultado
 
+
+
+# get_dados - Consulta a base de dados temporal e retorna os dados interpolados dentro dos limites indicados
+#
+# Parâmetros:
+#   filtro_tipo - tipos de dados que se procura, ex: 'latencia', ou '*' para todos os dados.
+#   nome_filtro - nome do agente que criou os dados, ex: 'rota1', 'teste', ou '*' para todos os agentes
+#   inicio, fim - data e hora de início e fim, pode ser um valor numérico equivalente a datetime.timestamp(datahora)
+#       se for informado '*' o valor usado é a data e hora atuais, se iniciar com '-' deve ser seguido por um valor
+#       inteiro e um sufixo ('h', 'm' ou 's') que indica o tempo relativo ao tempo atual (horas, minutos ou segundos)
+#   intervalo - intervalo em segundos que deve ser usado para interpolar os resultados
+# Retorno:
+#   dicionário contendo os dados selecionados dentro do intervalo indicado
+#
 def get_valores(filtro_tipo, nome_filtro, inicio, fim, intervalo):
     resultado_tipo = {}
     for tipo, dados_tipo in DataLake.items():
