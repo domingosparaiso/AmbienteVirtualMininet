@@ -7,6 +7,7 @@ from telemetria import telemetriaInicializaServidor, telemetriaInicializaAgentes
 from topologia import topologiaGenerica
 from teste import testeExecuta
 from rotas import gerarRotasEstaticas
+#from mininet.cli import CLI
 
 ################################################################################
 # Programa principal
@@ -51,11 +52,12 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.main("Executando os testes...")
-    testeExecuta(config.testefluxo, net, telemetriaServidor['fila'])
+    testeExecuta(config.testefluxo, net, telemetriaServidor['fila'], config.topologia)
     msg.main("Finalizando agentes de telemetria...")
     telemetriaFinalizaAgentes(telemetriaAgentes, telemetriaServidor['fila'])
     msg.main("Obtendo o resultado dos testes...")
     resultado = telemetriaHistorico(telemetriaServidor)
+    #CLI(net)
     msg.main("Finalizando o servidor de telemetria...")
     telemetriaFinalizaServidor(telemetriaServidor)
     msg.main("Finalizando o controlador...")

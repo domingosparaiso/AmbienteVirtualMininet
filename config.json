@@ -9,19 +9,19 @@
 			"h10","h20","h30","h40","h50","h60"
 		],
 		"links": [
-			{ "pontos": ["s1", "s2"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "s4"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s2", "s3"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s2", "s5"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s3", "s6"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s4", "s5"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s5", "s6"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s1", "h10"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s2", "h20"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s3", "h30"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s4", "h40"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s5", "h50"], "banda": "", "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h60"], "banda": "", "atraso": "", "perda":"" }
+			{ "pontos": ["s1", "s2"], "banda": 1, "atraso": "12", "perda":"" },
+			{ "pontos": ["s1", "s4"], "banda": 1, "atraso": "2", "perda":"" },
+			{ "pontos": ["s2", "s3"], "banda": 1, "atraso": "5", "perda":"" },
+			{ "pontos": ["s2", "s5"], "banda": 1, "atraso": "5", "perda":"" },
+			{ "pontos": ["s3", "s6"], "banda": 1, "atraso": "3", "perda":"" },
+			{ "pontos": ["s4", "s5"], "banda": 1, "atraso": "3", "perda":"" },
+			{ "pontos": ["s5", "s6"], "banda": 1, "atraso": "15", "perda":"" },
+			{ "pontos": ["s1", "h10"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s2", "h20"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s3", "h30"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s4", "h40"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s5", "h50"], "banda": 1, "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h60"], "banda": 1, "atraso": "", "perda":"" }
 		],
 		"rotas": [
 			{ "nome": "rota_h1#_h6#", "caminho": ["h1#","s1","*","s6","h6#"], "limite": 4 }
@@ -36,43 +36,11 @@
 			"descricao": "Processo Um",
 			"itens": [
 				{ 
-					"tipo": "iperf",
+					"tipo": "poisson",
 					"porta": "5001",
+					"lambda": 4,
 					"duracao": 5,
-					"origem": "h10",
-					"destino": "h60",
-					"parametros_origem": "",
-					"parametros_destino": "",
-					"otimizador": "default"
-				},
-				{
-					"tipo": "delay",
-					"duracao": 2
-				},
-				{
-					"tipo": "iperf",
-					"porta": "5001",
-					"duracao": 5,
-					"origem": "h10",
-					"destino": "h60",
-					"parametros_origem": "",
-					"parametros_destino": "",
-					"otimizador": "default"
-				}
-			]
-		},
-		{
-			"id": "proc2",
-			"descricao": "Processo Dois",
-			"itens": [
-				{
-					"tipo": "iperf",
-					"porta": "5002",
-					"duracao": 12,
-					"origem": "h10",
-					"destino": "h60",
-					"parametros_origem": "",
-					"parametros_destino": "",
+					"tamanhofluxo": 10,
 					"otimizador": "default"
 				}
 			]
@@ -93,7 +61,7 @@
 		{
 			"tipo": "testefluxo",
 			"descricao": "Fluxos de Dados",
-			"origens": [ "proc1", "proc2" ]
+			"origens": [ "proc1" ]
 		}
 	]
 }

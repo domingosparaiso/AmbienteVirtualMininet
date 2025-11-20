@@ -1,7 +1,9 @@
+import os
+import numpy as np
 import msg
-from time import sleep
 from multiprocessing import Process
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+import time
 import subprocess
 
 ################################################################################
@@ -14,11 +16,11 @@ import subprocess
 # Retorno:
 #   None
 #
-def testeExecuta(config_testes, net, fila):
+def testeExecuta(config_testes, net, fila, config_topologia):
     msg.info("Iniciando todos os processos de teste...")
     processos = []
     for teste in config_testes:
-        processo = Process(target=procTeste, args=(teste, net, fila))
+        processo = Process(target=procTeste, args=(teste, net, fila, config_topologia))
         processo.start()
         processos.append({ 'proc': processo, 'id': teste['id']})
     msg.info("Aguardando o fim dos testes...")
@@ -27,17 +29,24 @@ def testeExecuta(config_testes, net, fila):
     msg.info("Todos os testes foram executados!")
     return None
 
-def procTeste(teste, net, fila):
+def procTeste(teste, net, fila, topologia):
     procid = teste['id']
     descricao = teste['descricao']
     msg.info(f'Iniciando de processo de teste [{procid}]: {descricao}')
     itens = teste['itens']
     for item in itens:
         tipo = item['tipo']
+        if tipo == 'poisson':
+            duracao = item['duracao']
+            tamanhofluxo = item['tamanhofluxo']
+            lambdarate = item['lambda']
+            hosts = topologia['hosts']
+            all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts)
+            continue
         if tipo == 'delay':
             duracao = item['duracao']
             msg.debug(f'[{procid}]: delay {duracao}s')
-            sleep(duracao)
+            time.sleep(duracao)
             continue
         if tipo == 'iperf':
             duracao = item['duracao']
@@ -114,3 +123,83 @@ def procTeste(teste, net, fila):
         msg.aviso(f'[{procid}] {tipo}: falha no item de teste.')
     msg.info(f'Fim de processo de teste [{procid}]: {descricao}')
     return None
+
+def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
+    if len(hosts) > 0:
+        msg.info("\n*** Running all-to-all poison tests\n")
+
+        arq_bwm = f"relatorios/poisson-tmp.bwm"
+        monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
+        monitor_bw.start()
+
+        processos = []
+        counter = 0
+
+        for origem in hosts:
+            for destino in hosts:
+                if origem != destino:
+                    src = net.get(origem)
+                    dst = net.get(destino)
+                    counter += 1
+
+                    processo = Process(target=generate_flows, args=(lambdarate, duracao, tamanhofluxo, src, dst, counter,))
+                    processos.append(processo)
+                    processo.start()
+        
+        for processo in processos:
+            processo.join()
+        
+        print('acabou de verdade')
+        os.system("killall bwm-ng")
+
+
+def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
+    """
+    Generate iperf TCP flows from a fixed source to a fixed destination based 
+    on a Poisson distribution for the initiation rate.
+    
+    :param net: Mininet network object
+    :param src: Source host for iperf flows
+    :param dst: Destination host for iperf flows
+    :param lambda_rate: Average rate (events per second) for the Poisson distribution
+    :param duration: Duration to run the experiment
+    :param flow_size_kb: Fixed size of each flow (in Kilobytes)
+    :param counter: process number (for multiprocessing)
+    """
+    base_port = 5000
+    port = base_port + counter * 500   # range exclusivo por processo
+
+    # Define the fixed flow size in bytes
+    flow_size_bytes = flow_size_kb * 1024  # Convert size to bytes
+    
+    # Convert bytes to megabytes for iperf usage
+    flow_size_mb = flow_size_bytes / (1024 * 1024)
+
+    end_time = time.time() + duration
+
+    while time.time() < end_time:
+        # Generate time until the next event using Poisson distribution
+        delay = np.random.exponential(1/lambda_rate)
+        time.sleep(delay)
+
+        dst_port = port
+
+        # Check if the port is available
+        if dst_port > 65535:
+            print("Port number exceeded range.")
+            break
+
+        # Start iperf server on the destination host if not already running
+        dst.popen(f'iperf3 -s -1 -p {dst_port}')
+
+        # Start iperf client on the source host
+        src.popen(f'iperf3 -c {dst.IP()} -p {dst_port} -n {flow_size_mb:.2f}M')
+
+        # Increment the port number for the next flow
+        port += 1
+
+    print(f'Processo {counter} finalizado')
+
+def monitor_bwm_ng(fname, interval_sec):
+    cmd = f"sleep 1; bwm-ng -t {interval_sec * 1000} -o csv -u bytes -T rate -C ',' > {fname}"
+    subprocess.Popen(cmd, shell=True).wait()
