@@ -55,6 +55,9 @@ def procTeste(teste, net, fila, topologia):
             msg.debug(f'[{procid}]: delay {duracao}s')
             time.sleep(duracao)
             continue
+        if tipo == 'iperf-udp':
+            iperf_udp(item, net, procid, fila)
+            continue
         if tipo == 'iperf':
             duracao = item['duracao']
             origem = item['origem']
@@ -131,6 +134,79 @@ def procTeste(teste, net, fila, topologia):
     msg.info(f'Fim de processo de teste [{procid}]: {descricao}')
     return None
 
+def iperf_udp(item, net, procid, fila):
+    duracao = item['duracao']
+    origem = item['origem']
+    destino = item['destino']
+    porta = item['porta']
+    taxa = item['taxa']
+    msg.debug(f'[{procid}]: iperf {origem} -> {destino}:{porta}, {duracao}s')
+    parametros_origem = item['parametros_origem']
+    parametros_destino = item['parametros_destino']
+    otimizador = item['otimizador']
+    host_origem = net.get(origem)
+    if host_origem != None:
+        host_destino = net.get(destino)
+        if host_destino != None:
+            ip_destino = host_destino.IP()
+            cmd_destino = f"iperf3 -s -B {ip_destino} -p {porta} -1 -fk --forceflush --timestamps=%F;%T; {parametros_destino}"
+            cmd_origem = f"iperf3 -c {ip_destino} -u -b {taxa} -p {porta} {parametros_origem}"
+            p_destino = host_destino.popen(cmd_destino.strip().split(' '))
+            p_origem = host_origem.popen(cmd_origem.strip().split(' '))
+            stdout_d, stderr_d = p_destino.communicate()
+            stdout_o, stderr_o = p_origem.communicate()
+            lista = stdout_d.decode().split('\n')
+            envia = False
+            incializado = False
+            for linha in lista:
+                L = linha.split(' ')
+                if envia:
+                    if L[-1] == '-':
+                        break
+                    K = [c for c in L if c]
+                    try:
+                        valor = float(K[-2])
+                    except:
+                        valor = 0
+                    str_datahora = ' '.join(linha.split(';')[0:2])
+                    if not incializado:
+                        incializado = True
+                        data = linha.split(';')[0:1][0].split('-')
+                        hora = linha.split(';')[1:2][0].split(':')
+                        dh = datetime(int(data[0]), int(data[1]), int(data[2]), int(hora[0]), int(hora[1]), int(hora[2])) - timedelta(seconds=1)
+                        #agora = dh.strftime("%Y-%m-%d %H:%M:%S")
+                        agora = datetime.timestamp(dh)
+                        fila.put( {
+                            'tipo': 'iperf',
+                            'nome': procid,
+                            'datahora': agora,
+                            'valor': None,
+                            'evento': 'BEGIN'
+                        } )
+                    dh = datetime.strptime(
+                        str_datahora,
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    datahora = datetime.timestamp(dh)
+                    fila.put( { 
+                        'tipo': 'iperf',
+                        'nome': procid,
+                        'datahora': datahora,
+                        'valor': valor,
+                        'evento': None
+                    } )
+                else:
+                    if L[-1] == 'Bitrate':
+                        envia = True
+            datahora = datetime.timestamp(datetime.now())
+            fila.put( {
+                'tipo': 'iperf',
+                'nome': procid,
+                'datahora': datahora,
+                'valor': None,
+                'evento': 'END'
+            } )
+
 def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
     if len(hosts) > 0:
         msg.info("\n*** Running all-to-all poison tests\n")
@@ -180,7 +256,6 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
     while time.time() < end_time:
         # Generate time until the next event using Poisson distribution
         delay = np.random.poisson(1/lambda_rate)
-        print()
         time.sleep(delay)
 
         dst_port = port

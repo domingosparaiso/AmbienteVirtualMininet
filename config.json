@@ -9,19 +9,19 @@
 			"h10","h20","h30","h40","h50","h60"
 		],
 		"links": [
-			{ "pontos": ["s1", "s2"], "banda": 1, "atraso": "12", "perda":"" },
-			{ "pontos": ["s1", "s4"], "banda": 1, "atraso": "2", "perda":"" },
-			{ "pontos": ["s2", "s3"], "banda": 1, "atraso": "5", "perda":"" },
-			{ "pontos": ["s2", "s5"], "banda": 1, "atraso": "5", "perda":"" },
-			{ "pontos": ["s3", "s6"], "banda": 1, "atraso": "3", "perda":"" },
-			{ "pontos": ["s4", "s5"], "banda": 1, "atraso": "3", "perda":"" },
-			{ "pontos": ["s5", "s6"], "banda": 1, "atraso": "15", "perda":"" },
-			{ "pontos": ["s1", "h10"], "banda": 1, "atraso": "", "perda":"" },
-			{ "pontos": ["s2", "h20"], "banda": 1, "atraso": "", "perda":"" },
-			{ "pontos": ["s3", "h30"], "banda": 1, "atraso": "", "perda":"" },
-			{ "pontos": ["s4", "h40"], "banda": 1, "atraso": "", "perda":"" },
-			{ "pontos": ["s5", "h50"], "banda": 1, "atraso": "", "perda":"" },
-			{ "pontos": ["s6", "h60"], "banda": 1, "atraso": "", "perda":"" }
+			{ "pontos": ["s1", "s2"], "banda": 100, "atraso": "7", "perda":"" },
+			{ "pontos": ["s1", "s4"], "banda": 100, "atraso": "1", "perda":"" },
+			{ "pontos": ["s2", "s3"], "banda": 100, "atraso": "2", "perda":"" },
+			{ "pontos": ["s2", "s5"], "banda": 100, "atraso": "2", "perda":"" },
+			{ "pontos": ["s3", "s6"], "banda": 100, "atraso": "3", "perda":"" },
+			{ "pontos": ["s4", "s5"], "banda": 100, "atraso": "1", "perda":"" },
+			{ "pontos": ["s5", "s6"], "banda": 100, "atraso": "8", "perda":"" },
+			{ "pontos": ["s1", "h10"], "banda": 500, "atraso": "", "perda":"" },
+			{ "pontos": ["s2", "h20"], "banda": 500, "atraso": "", "perda":"" },
+			{ "pontos": ["s3", "h30"], "banda": 500, "atraso": "", "perda":"" },
+			{ "pontos": ["s4", "h40"], "banda": 500, "atraso": "", "perda":"" },
+			{ "pontos": ["s5", "h50"], "banda": 500, "atraso": "", "perda":"" },
+			{ "pontos": ["s6", "h60"], "banda": 500, "atraso": "", "perda":"" }
 		],
 		"rotas": [
 			{ "nome": "rota_h1#_h6#", "caminho": ["h1#","s1","*","s6","h6#"], "limite": 4 }
@@ -35,13 +35,63 @@
 			"id": "proc1",
 			"descricao": "Processo Um",
 			"itens": [
-				{ 
-					"tipo": "poisson",
-					"porta": "5001",
-					"lambda": 4,
-					"duracao": 5,
-					"tamanhofluxo": 10,
+				{
+					"tipo": "iperf-udp",
+					"origem": "h50",
+					"destino": "h60",
+					"duracao": 10,
+					"porta": 5001,
+					"parametros_origem": "",
+					"parametros_destino": "",
+					"otimizador": "default",
+                    "taxa": "10M"
+				},
+				{
+					"tipo": "delay",
+					"duracao": 10
+				},
+				{
+					"tipo": "iperf-udp",
+					"origem": "h50",
+					"destino": "h60",
+					"duracao": 30,
+					"porta": 5001,
+					"parametros_origem": "",
+					"parametros_destino": "",
+					"otimizador": "default",
+                    "taxa": "50M"
+				}
+			]
+		},
+		{
+			"id": "proc2",
+			"descricao": "Processo Dois",
+			"itens": [
+				{
+					"tipo": "iperf",
+					"origem": "h10",
+					"destino": "h60",
+					"duracao": 40,
+					"porta": 5002,
+					"parametros_origem": "",
+					"parametros_destino": "",
 					"otimizador": "default"
+				}
+			]
+		},
+		{
+			"id": "proc3",
+			"descricao": "Processo Tres",
+			"itens": [
+				{
+					"tipo": "poisson",
+					"duracao": 40,
+					"porta": 5003,
+					"parametros_origem": "",
+					"parametros_destino": "",
+					"otimizador": "default",
+					"lambda": 0.1,
+					"tamanhofluxo": 1000
 				}
 			]
 		}
@@ -61,7 +111,7 @@
 		{
 			"tipo": "testefluxo",
 			"descricao": "Fluxos de Dados",
-			"origens": [ "proc1" ]
+			"origens": [ "proc1", "proc2", "proc3" ]
 		}
 	]
 }

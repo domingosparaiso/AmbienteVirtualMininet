@@ -40,7 +40,7 @@ if __name__ == '__main__':
         msg.main("Finalizando por falha.")
         exit(1)
     msg.debug("Testando as conexões entre as máquinas da rede...")
-    net.pingAll()
+    #net.pingAll()
     msg.main("Inicializando o servidor de telemetria...")
     telemetriaServidor = telemetriaInicializaServidor()
     if telemetriaServidor == None:
