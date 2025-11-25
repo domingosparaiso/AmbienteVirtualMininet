@@ -19,6 +19,11 @@ import subprocess
 def testeExecuta(config_testes, net, fila, config_topologia):
     msg.info("Iniciando todos os processos de teste...")
     processos = []
+
+    arq_bwm = f"relatorios/banda.bwm"
+    monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
+    monitor_bw.start()
+
     for teste in config_testes:
         processo = Process(target=procTeste, args=(teste, net, fila, config_topologia))
         processo.start()
@@ -27,6 +32,8 @@ def testeExecuta(config_testes, net, fila, config_topologia):
     for processo in processos:
         processo['proc'].join()
     msg.info("Todos os testes foram executados!")
+
+    os.system("killall bwm-ng")
     return None
 
 def procTeste(teste, net, fila, topologia):
@@ -128,13 +135,9 @@ def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
     if len(hosts) > 0:
         msg.info("\n*** Running all-to-all poison tests\n")
 
-        arq_bwm = f"relatorios/poisson-tmp.bwm"
-        monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
-        monitor_bw.start()
-
         processos = []
         counter = 0
-
+        
         for origem in hosts:
             for destino in hosts:
                 if origem != destino:
@@ -148,9 +151,6 @@ def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
         
         for processo in processos:
             processo.join()
-        
-        print('acabou de verdade')
-        os.system("killall bwm-ng")
 
 
 def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
@@ -179,7 +179,8 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
 
     while time.time() < end_time:
         # Generate time until the next event using Poisson distribution
-        delay = np.random.exponential(1/lambda_rate)
+        delay = np.random.poisson(1/lambda_rate)
+        print()
         time.sleep(delay)
 
         dst_port = port
@@ -197,8 +198,6 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
 
         # Increment the port number for the next flow
         port += 1
-
-    print(f'Processo {counter} finalizado')
 
 def monitor_bwm_ng(fname, interval_sec):
     cmd = f"sleep 1; bwm-ng -t {interval_sec * 1000} -o csv -u bytes -T rate -C ',' > {fname}"
