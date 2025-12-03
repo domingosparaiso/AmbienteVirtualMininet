@@ -3,6 +3,7 @@ import numpy as np
 import msg
 from multiprocessing import Process
 from datetime import datetime, time, timedelta
+import random
 import time
 import subprocess
 
@@ -19,6 +20,11 @@ import subprocess
 def testeExecuta(config_testes, net, fila, config_topologia):
     msg.info("Iniciando todos os processos de teste...")
     processos = []
+
+    arq_bwm = f"relatorios/banda.bwm"
+    monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
+    monitor_bw.start()
+
     for teste in config_testes:
         processo = Process(target=procTeste, args=(teste, net, fila, config_topologia))
         processo.start()
@@ -27,114 +33,169 @@ def testeExecuta(config_testes, net, fila, config_topologia):
     for processo in processos:
         processo['proc'].join()
     msg.info("Todos os testes foram executados!")
+
+    os.system("killall bwm-ng")
     return None
 
 def procTeste(teste, net, fila, topologia):
     procid = teste['id']
     descricao = teste['descricao']
     msg.info(f'Iniciando de processo de teste [{procid}]: {descricao}')
+
     itens = teste['itens']
     for item in itens:
         tipo = item['tipo']
+
         if tipo == 'poisson':
-            duracao = item['duracao']
-            tamanhofluxo = item['tamanhofluxo']
-            lambdarate = item['lambda']
-            hosts = topologia['hosts']
-            all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts)
+            all2allpoisson(item, net, topologia)
             continue
+
         if tipo == 'delay':
             duracao = item['duracao']
             msg.debug(f'[{procid}]: delay {duracao}s')
             time.sleep(duracao)
             continue
+
         if tipo == 'iperf':
-            duracao = item['duracao']
-            origem = item['origem']
-            destino = item['destino']
-            porta = item['porta']
-            msg.debug(f'[{procid}]: iperf {origem} -> {destino}:{porta}, {duracao}s')
-            parametros_origem = item['parametros_origem']
-            parametros_destino = item['parametros_destino']
-            otimizador = item['otimizador']
-            host_origem = net.get(origem)
-            if host_origem != None:
-                host_destino = net.get(destino)
-                if host_destino != None:
-                    ip_destino = host_destino.IP()
-                    cmd_destino = f"iperf3 -s -B {ip_destino} -p {porta} -1 -fk --forceflush --timestamps=%F;%T; {parametros_destino}"
-                    cmd_origem = f"iperf3 -c {ip_destino} -p {porta} -t {duracao} {parametros_origem}"
-                    p_destino = host_destino.popen(cmd_destino.strip().split(' '))
-                    p_origem = host_origem.popen(cmd_origem.strip().split(' '))
-                    stdout_d, stderr_d = p_destino.communicate()
-                    stdout_o, stderr_o = p_origem.communicate()
-                    lista = stdout_d.decode().split('\n')
-                    envia = False
-                    incializado = False
-                    for linha in lista:
-                        L = linha.split(' ')
-                        if envia:
-                            if L[-1] == '-':
-                                break
-                            K = [c for c in L if c]
-                            try:
-                                valor = float(K[-2])
-                            except:
-                                valor = 0
-                            str_datahora = ' '.join(linha.split(';')[0:2])
-                            if not incializado:
-                                incializado = True
-                                data = linha.split(';')[0:1][0].split('-')
-                                hora = linha.split(';')[1:2][0].split(':')
-                                dh = datetime(int(data[0]), int(data[1]), int(data[2]), int(hora[0]), int(hora[1]), int(hora[2])) - timedelta(seconds=1)
-                                #agora = dh.strftime("%Y-%m-%d %H:%M:%S")
-                                agora = datetime.timestamp(dh)
-                                fila.put( {
-                                    'tipo': 'iperf',
-                                    'nome': procid,
-                                    'datahora': agora,
-                                    'valor': None,
-                                    'evento': 'BEGIN'
-                                } )
-                            dh = datetime.strptime(
-                                str_datahora,
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                            datahora = datetime.timestamp(dh)
-                            fila.put( { 
-                                'tipo': 'iperf',
-                                'nome': procid,
-                                'datahora': datahora,
-                                'valor': valor,
-                                'evento': None
-                            } )
-                        else:
-                            if L[-1] == 'Bitrate':
-                                envia = True
-                    datahora = datetime.timestamp(datetime.now())
-                    fila.put( {
-                        'tipo': 'iperf',
-                        'nome': procid,
-                        'datahora': datahora,
-                        'valor': None,
-                        'evento': 'END'
-                    } )
-                    continue
+            iperf(item, net, procid, fila)
+            continue
+
+        if tipo == 'streaming':
+            streaming(item, net, procid, fila)
+            continue
+
         msg.aviso(f'[{procid}] {tipo}: falha no item de teste.')
+        
     msg.info(f'Fim de processo de teste [{procid}]: {descricao}')
     return None
 
-def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
+def streaming(item, net, procid, fila):
+    origem = item["origem"]
+    destino = item["destino"]
+    porta = item["porta"]
+    duracao = item["duracao"] # por quanto tempo vai ficar nesse loop
+    intervalo = item["intervalo"] # intervalo entre requisições
+    duracao_sessao = item["duracao_sessao"]
+    n_requisicoes = item["requisicoes"]
+
+    host_origem = net.get(origem)
+    host_destino = net.get(destino)
+
+    ip_origem = host_origem.IP()
+    ip_destino = host_destino.IP()
+
+    iperf_item = {
+        'origem': destino, 
+        'destino': origem, 
+        'porta': porta,
+        'duracao': (duracao_sessao // n_requisicoes),
+        'parametros_destino': '',
+        'otimizador': 'default'
+    }
+
+    end_time = time.time() + duracao
+
+    while time.time()  < end_time:
+        for i in range(n_requisicoes):
+            bitrate = random.randint(75, 100)  # bitrate em Mbps
+            iperf_item['parametros_origem'] = f'-u -b {bitrate}M'
+
+            ping_output = host_origem.cmd(f'ping {ip_destino} -c 1') # simula a requisição HTTP para começar a receber os pacotes
+            iperf(iperf_item, net, procid, fila)
+        
+        time.sleep(intervalo)
+
+
+def iperf(item, net, procid, fila):
+    duracao = item['duracao']
+    origem = item['origem']
+    destino = item['destino']
+    porta = item['porta']
+
+    msg.debug(f'[{procid}]: iperf {origem} -> {destino}:{porta}, {duracao}s')
+
+    parametros_origem = item['parametros_origem']
+    parametros_destino = item['parametros_destino']
+    otimizador = item['otimizador']
+    host_origem = net.get(origem)
+    if host_origem != None:
+        host_destino = net.get(destino)
+        if host_destino != None:
+            ip_destino = host_destino.IP()
+            cmd_destino = f"iperf3 -s -B {ip_destino} -p {porta} -1 -fk --forceflush --timestamps=%F;%T; {parametros_destino}"
+            cmd_origem = f"iperf3 -c {ip_destino} -p {porta} -t {duracao} {parametros_origem}"
+            p_destino = host_destino.popen(cmd_destino.strip().split(' '))
+            p_origem = host_origem.popen(cmd_origem.strip().split(' '))
+            stdout_d, stderr_d = p_destino.communicate()
+            stdout_o, stderr_o = p_origem.communicate()
+            lista = stdout_d.decode().split('\n')
+            envia = False
+            incializado = False
+            for linha in lista:
+                L = linha.split(' ')
+                if envia:
+                    if L[-1] == '-':
+                        break
+                    K = [c for c in L if c]
+                    try:
+                        valor = float(K[-2])
+                    except:
+                        valor = 0
+                    
+                    try:
+                        str_datahora = ' '.join(linha.split(';')[0:2])
+                        if not incializado:
+                            incializado = True
+                            data = linha.split(';')[0:1][0].split('-')
+                            hora = linha.split(';')[1:2][0].split(':')
+                            dh = datetime(int(data[0]), int(data[1]), int(data[2]), int(hora[0]), int(hora[1]), int(hora[2])) - timedelta(seconds=1)
+                            #agora = dh.strftime("%Y-%m-%d %H:%M:%S")
+                            agora = datetime.timestamp(dh)
+                            fila.put( {
+                                'tipo': 'iperf',
+                                'nome': procid,
+                                'datahora': agora,
+                                'valor': None,
+                                'evento': 'BEGIN'
+                            } )
+                        dh = datetime.strptime(
+                            str_datahora,
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        datahora = datetime.timestamp(dh)
+                        fila.put( { 
+                            'tipo': 'iperf',
+                            'nome': procid,
+                            'datahora': datahora,
+                            'valor': valor,
+                            'evento': None
+                        } )
+                    except:
+                        print("Erro no iperf: ", linha)
+                else:
+                    if L[-1] == 'Bitrate':
+                        envia = True
+            datahora = datetime.timestamp(datetime.now())
+            fila.put( {
+                'tipo': 'iperf',
+                'nome': procid,
+                'datahora': datahora,
+                'valor': None,
+                'evento': 'END'
+            } )
+
+def all2allpoisson(item, net, topologia):
+    duracao = item['duracao']
+    tamanhofluxo = item['tamanhofluxo']
+    lambdarate = item['lambda']
+    hosts = topologia['hosts']
+    
     if len(hosts) > 0:
         msg.info("\n*** Running all-to-all poison tests\n")
 
-        arq_bwm = f"relatorios/poisson-tmp.bwm"
-        monitor_bw = Process(target=monitor_bwm_ng, args=(arq_bwm, 1.0))
-        monitor_bw.start()
-
         processos = []
         counter = 0
-
+        
         for origem in hosts:
             for destino in hosts:
                 if origem != destino:
@@ -148,9 +209,6 @@ def all2allpoisson(net, lambdarate, duracao, tamanhofluxo, hosts):
         
         for processo in processos:
             processo.join()
-        
-        print('acabou de verdade')
-        os.system("killall bwm-ng")
 
 
 def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
@@ -179,7 +237,7 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
 
     while time.time() < end_time:
         # Generate time until the next event using Poisson distribution
-        delay = np.random.exponential(1/lambda_rate)
+        delay = np.random.poisson(1/lambda_rate)
         time.sleep(delay)
 
         dst_port = port
@@ -197,8 +255,6 @@ def generate_flows(lambda_rate, duration, flow_size_kb, src, dst, counter = 0):
 
         # Increment the port number for the next flow
         port += 1
-
-    print(f'Processo {counter} finalizado')
 
 def monitor_bwm_ng(fname, interval_sec):
     cmd = f"sleep 1; bwm-ng -t {interval_sec * 1000} -o csv -u bytes -T rate -C ',' > {fname}"
